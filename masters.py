@@ -45,7 +45,8 @@ def updateWatchlist(year,month,day):
     fileName='masters/masterindex'+year+month+day
     warningSigns=['NT 10-K','NT 10-Q']
     requiredFilings=['10-K','10-Q']
-        
+
+    #the isdigit() code is a lazy way of checking that were getting records, as opposed to headers
     with open(fileName,'r') as f:
         g=[line.split('|') for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in warningSigns]
 
