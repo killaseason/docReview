@@ -19,6 +19,17 @@ logging.basicConfig(filename="log.txt",filemode="w",level=logging.DEBUG)
 
 #Need method either here or in prep that makes sure masters are up to date
 
+def loopOverDates(dateBlock):
+    """
+        Will be useful to perform certain functions over a range of dates, including downloading masters, updating the watchlist and checking whether certain CIKs are traded on an exchange.
+        Currently takes block of dates in YYYYMMDD format, but should eventually be able to just take startDate and endDate
+    """
+
+    for myDate in dateBlock:
+        with open('masters/masterindex'+myDate,'r') as f:
+            masters.onExchange(f) #Making sure to update the list of ciks on an exchanges
+
+
 def getfilers(date,form):
     """
         Rreturns unique list of cik, filer from master file for all filers of specified form on given day
@@ -145,57 +156,59 @@ def todate(din):
 #masterRecords=staticmethods.StaticMethods.getFormsFiledOnDay(['10-K','10-Q','8-K'],'2015','06','02')
 #staticmethods.StaticMethods.findTerms(masterRecords)
 
+#loopOverDates(['20150203'])
 
-masters.updateWatchlist('2015','02','02')
-masters.updateWatchlist('2015','02','03')
-masters.updateWatchlist('2015','02','04')
-masters.updateWatchlist('2015','02','05')
-masters.updateWatchlist('2015','02','06')
+loopOverDates(['20150303','20150304','20150305','20150306','20150309','20150310','20150311','20150312','20150313','20150316'])
 
-masters.updateWatchlist('2015','02','09')
-masters.updateWatchlist('2015','02','10')
-masters.updateWatchlist('2015','02','11')
-masters.updateWatchlist('2015','02','12')
-masters.updateWatchlist('2015','02','13')
+#masters.updateWatchlist('2015','02','02')
+#masters.updateWatchlist('2015','02','03')
+#masters.updateWatchlist('2015','02','04')
+#masters.updateWatchlist('2015','02','05')
+#masters.updateWatchlist('2015','02','06')
+
+#masters.updateWatchlist('2015','02','09')
+#masters.updateWatchlist('2015','02','10')
+#masters.updateWatchlist('2015','02','11')
+#masters.updateWatchlist('2015','02','12')
+#masters.updateWatchlist('2015','02','13')
 
 #masters.updateWatchlist('2015','02','16') Presidents day
-masters.updateWatchlist('2015','02','17')
-masters.updateWatchlist('2015','02','18')
-masters.updateWatchlist('2015','02','19')
-masters.updateWatchlist('2015','02','20')
+#masters.updateWatchlist('2015','02','17')
+#masters.updateWatchlist('2015','02','18')
+#masters.updateWatchlist('2015','02','19')
+#masters.updateWatchlist('2015','02','20')
 
-masters.updateWatchlist('2015','02','23')
-masters.updateWatchlist('2015','02','24')
-masters.updateWatchlist('2015','02','25')
-masters.updateWatchlist('2015','02','26')
-masters.updateWatchlist('2015','02','27')
+#masters.updateWatchlist('2015','02','23')
+#masters.updateWatchlist('2015','02','24')
+#masters.updateWatchlist('2015','02','25')
+#masters.updateWatchlist('2015','02','26')
+#masters.updateWatchlist('2015','02','27')
 
-masters.updateWatchlist('2015','03','02')
-masters.updateWatchlist('2015','03','03')
-masters.updateWatchlist('2015','03','04')
-masters.updateWatchlist('2015','03','05')
-masters.updateWatchlist('2015','03','06')
+#masters.updateWatchlist('2015','03','02')
+#masters.updateWatchlist('2015','03','03')
+#masters.updateWatchlist('2015','03','04')
+#masters.updateWatchlist('2015','03','05')
+#masters.updateWatchlist('2015','03','06')
 
-masters.updateWatchlist('2015','03','09')
-masters.updateWatchlist('2015','03','10')
-masters.updateWatchlist('2015','03','11')
-masters.updateWatchlist('2015','03','12')
-masters.updateWatchlist('2015','03','13')
+#masters.updateWatchlist('2015','03','09')
+#masters.updateWatchlist('2015','03','10')
+#masters.updateWatchlist('2015','03','11')
+#masters.updateWatchlist('2015','03','12')
+#masters.updateWatchlist('2015','03','13')
 
-masters.updateWatchlist('2015','03','16')
-masters.updateWatchlist('2015','03','17')
-masters.updateWatchlist('2015','03','18')
-masters.updateWatchlist('2015','03','19')
-masters.updateWatchlist('2015','03','20')
+#masters.updateWatchlist('2015','03','16')
+#masters.updateWatchlist('2015','03','17')
+#masters.updateWatchlist('2015','03','18')
+#masters.updateWatchlist('2015','03','19')
+#masters.updateWatchlist('2015','03','20')
 
-masters.updateWatchlist('2015','03','23')
-masters.updateWatchlist('2015','03','24')
-masters.updateWatchlist('2015','03','25')
-masters.updateWatchlist('2015','03','26')
-masters.updateWatchlist('2015','03','27')
+#masters.updateWatchlist('2015','03','23')
+#masters.updateWatchlist('2015','03','24')
+#masters.updateWatchlist('2015','03','25')
+#masters.updateWatchlist('2015','03','26')
+#masters.updateWatchlist('2015','03','27')
 
-masters.updateWatchlist('2015','03','30')
-masters.updateWatchlist('2015','03','31')
+#masters.updateWatchlist('2015','03','30')
+#masters.updateWatchlist('2015','03','31')
 
-
-masters.filedDelayedReport()
+#masters.filedDelayedReport()

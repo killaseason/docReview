@@ -9,7 +9,6 @@ def updateWatchlistSQL(year,month,day):
 
     """
         
-
 #CHECK IF MASTER EXISTS AND DOWNLOAD IF NOT
 
     fileName='masters/masterindex'+year+month+day
@@ -59,10 +58,6 @@ def updateWatchlist(year,month,day):
             with open(fileName,'r') as f: #Gets records of 10-Ks etc for ciks that were already on watchlist
                 laterFiling=f.readlines()
             temp=removeLaterFiled(temp,laterFiling)
-            
-            
-            
-
 
             temp.extend(g)
 
@@ -99,7 +94,7 @@ def removeLaterFiled(myWatchlist,fileAsList):
     correctiveUniques=getUniqueCiks(correctiveFilings)
 
 def filedCorrective(myWatchlist):
-
+    pass
 
 
 def getUniqueCiks(myWatchlist):
@@ -112,5 +107,43 @@ def getUniqueCiks(myWatchlist):
 
     return uniqueCiks
 
+def onExchange(f):
+    """
+        Goes through master file (f) and identifies which CIKs are associated with proxy-related filings.
+        The fact of a companys filing one of these is taken to mean its traded on exchange.
+    """
 
+    #These are the flinings I believe to be associated with being publicly traded
+    #Filings that should not be included: PREM14A & DEFM14A (concern mergers)
+    #DEF 14A can be associated with consent solicitations, other proposals and have no references to exchanges
+    #DEFA14A was assocaited with a company traded on foreign exchange (Acucela).
+    #Additional materials filings seem not to contain useful information.
+    #If/when we ultimately look through these filings, will want to check for New York Stock Exchange in addition
+    #to NYSE, since, e.g., Joy Global refers to it as such in its 14A
+    #Text searches may yield false positives since D&Os qualifications may include their service on NASDAQ/NYSE
+    #listed companies
+    #'DEFA14A','PRER14A' seem not to contain actual info re NASDAQ/NSYE
+    keyFilings=['DEF 14A','PRE 14A']
 
+#    a=[line.split('|') for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in keyFilings]
+
+    #Creates set of ciks
+    a={line.split('|')[0] for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in keyFilings}
+
+    #Attempts to open list of ciks that are traded and appends the data from the date just loaded
+
+    try:
+        with open('data/onExchange.pk', 'r') as input: temp=pickle.load(input)
+#        temp.add(a)
+        for element in a:
+            temp.add(element)
+        
+    except IOError:
+        print 'File probably doesn\'t exist'
+        temp=a
+
+    #Outputs updated list
+    with open('data/onExchange.pk', 'wb') as output: pickle.dump(temp,output,pickle.HIGHEST_PROTOCOL)
+
+    print temp
+    print '\n'
