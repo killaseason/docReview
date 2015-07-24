@@ -19,15 +19,40 @@ logging.basicConfig(filename="log.txt",filemode="w",level=logging.DEBUG)
 
 #Need method either here or in prep that makes sure masters are up to date
 
-def loopOverDates(dateBlock):
+def loopOverDates(startDate,endDate):
     """
         Will be useful to perform certain functions over a range of dates, including downloading masters, updating the watchlist and checking whether certain CIKs are traded on an exchange.
         Currently takes block of dates in YYYYMMDD format, but should eventually be able to just take startDate and endDate
     """
+    
+    startObj=datetime.datetime(int(startDate[0:4]),int(startDate[4:6]),int(startDate[6:8]))
+    endObj=datetime.datetime(int(endDate[0:4]),int(endDate[4:6]),int(endDate[6:8]))
+    
+    inc = datetime.timedelta(days=1)
+    
+    #CHECK IF MASTER EXISTS AND DOWNLOAD IF NOT
 
-    for myDate in dateBlock:
-        with open('masters/masterindex'+myDate,'r') as f:
-            masters.onExchange(f) #Making sure to update the list of ciks on an exchanges
+    while startObj<=endObj:
+        if startObj.weekday()<5: #i.e., if its a weekday
+            try:
+                year=str(startObj.year)
+                month="%02d" % startObj.month
+                day="%02d" % startObj.day
+                
+                fileName='masters/masterindex'+year+month+day
+                print fileName
+
+                with open(fileName,'r') as f:
+                    masters.onExchange(f)
+            except IOError: print "There was an IOError of some sort"
+                
+            finally: startObj+=inc
+
+        else: startObj+=inc
+
+#    for myDate in dateBlock:
+#        with open('masters/masterindex'+myDate,'r') as f:
+#            masters.onExchange(f) #Making sure to update the list of ciks on an exchanges
 
 
 def getfilers(date,form):
@@ -156,9 +181,7 @@ def todate(din):
 #masterRecords=staticmethods.StaticMethods.getFormsFiledOnDay(['10-K','10-Q','8-K'],'2015','06','02')
 #staticmethods.StaticMethods.findTerms(masterRecords)
 
-#loopOverDates(['20150203'])
-
-loopOverDates(['20150303','20150304','20150305','20150306','20150309','20150310','20150311','20150312','20150313','20150316'])
+loopOverDates('20150102','20150531')
 
 #masters.updateWatchlist('2015','02','02')
 #masters.updateWatchlist('2015','02','03')

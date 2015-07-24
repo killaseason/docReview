@@ -39,8 +39,6 @@ def updateWatchlist(year,month,day):
     Can save for SQL code, but going to try to accomplish this with lists and pickling in near term
     """
         
-        #CHECK IF MASTER EXISTS AND DOWNLOAD IF NOT
-        
     fileName='masters/masterindex'+year+month+day
     warningSigns=['NT 10-K','NT 10-Q']
     requiredFilings=['10-K','10-Q']
@@ -146,4 +144,5 @@ def onExchange(f):
     with open('data/onExchange.pk', 'wb') as output: pickle.dump(temp,output,pickle.HIGHEST_PROTOCOL)
 
     print temp
+    print len(temp)
     print '\n'
