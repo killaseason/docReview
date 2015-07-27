@@ -46,68 +46,6 @@ class StaticMethods:
         return rows
 
 
-    @staticmethod
-    def getFormFromMaster(masterRecord):
-        """
-        Checks a record from a master file to see whether the filing exists locally and, if not, retrieves it.
-        """
-        fileName=masterRecord[-1]
-        if os.path.isfile(fileName):
-            logging.debug('Filename %s already exists' % fileName)
-            print 'Filename %s already exists' % fileName
-        else:
-            filePath='/'.join(fileName.split('/')[:3]) #Should really slice through -2
-            
-            #Now check if path exists
-            if os.path.exists(filePath):
-                logging.debug('Path %s already exists' % filePath)
-                print 'Path %s already exists' % filePath
-            else:
-                logging.info('Needed to create path %s.' % filePath)
-                print 'Needed to create path %s.' % filePath
-                os.makedirs(filePath)
-            
-            remotePath='ftp://ftp.sec.gov/'+fileName
-            logging.info('Needed to download file from %s' % remotePath)
-            print 'Needed to download file from %s' % remotePath
-                
-                #isError=True
-                #            while isError:
-            t0=time.time()
-            try:
-                #NEED TO HANDLE EXCEPTIONS WHEN THIS CANT FIND FILE, WAIT A COUPLE SECOND THEN TRY AGAIN
-                urllib.urlretrieve(remotePath,fileName)
-                t1=time.time()
-                print 'Total time to download: ', t1-t0
-                #        isError=False
-                
-            #This seems to be the wrong type of error to report, because the exception is getting
-            #thrown even when the file is downloaded
-            #Also, getting errors when trying to print e.code and e.read()
-            except IOError as e:
-                logging.error('File %s was not downloaded due to an IOERrror' % remotePath)
-
-#print e.code
-#                print e.read()
-                print 'Failed to download file %s because of an error' % remotePath
-                #time.sleep(5)
-                t1=time.time()
-                print 'Total time to suck: ', t1-t0
-                return True
-            except: raise
-            else:
-                #time.sleep(5)
-                return False
-
-        """
-            avx-20150331x10k.htm
-            sgmd-20140630_10k.htm
-            brs10-k2015.htm
-            acaciadiversified10k123113.htm
-            ntct-2015331x10k.htm
-            a2224790z10-k.htm Actual ticker is VIRT
-            d927560d10k.htm Actual ticker is GAIN
-        """
 
     @staticmethod
     def getAllFormsFromMaster(recordBlock):
@@ -137,12 +75,6 @@ class StaticMethods:
             #Issue here is that I cannot figure out how to match on or more " marks. "? does not work, nor does (?:")?
             s=re.compile(r'((?:OTC|NYSE|[Nn][Aa][Ss][Dd][Aa][Qq])?.*symbol[.\n](?:&ldquo;)?(?:&#14[5678];)?(?:&#822[01];)?([A-Z]{1,4})(?:&rdquo;)?(?:&#14[5678];)?(?:&#822[01];)?.*(?:OTC|NYSE|NASDAQ)?)')
             q=re.compile(r'[Mm]aterial(?:ly)? weak')
-            #May want to use restatement, because in case of VRTU, turned up restated agreements; using a capital R will cause similar problems
-            #Some 10-Ks may have exhibits that include prospectuses (or shareholder agreements) that address possibility of restatement. Should avoid reading these, which presumably means using an HTML parser.
-            #Smaller reporting companies may also be worth focusing on, since less likely to be seen by other firms. Again, HTML might be necessary.
-            #Item 9a in 10-K specifically speaks to internal controls. Certain words mentioned here should have higher value than mentioned elsewhere.
-            #Item 4 (Controls and Procedures) in 10-Q is similar
-            #Material weakness might show up in exhibits to 8-K, e.g., class action settlement notices
             
             r=re.compile(r'restatement')
             t=re.compile(r'(<FILENAME>([a-z]{1,4})[a-z0-9-_.]*htm)')

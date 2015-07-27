@@ -34,21 +34,31 @@ def loopOverDates(startDate,endDate):
 
     while startObj<=endObj:
         if startObj.weekday()<5: #i.e., if its a weekday
-            try:
-                year=str(startObj.year)
-                month="%02d" % startObj.month
-                day="%02d" % startObj.day
+            
+            year=str(startObj.year)
+            month="%02d" % startObj.month
+            day="%02d" % startObj.day
                 
-                fileName='masters/masterindex'+year+month+day
-                print fileName
+            fileName='masters/masterindex'+year+month+day
+            print fileName
+            
+            if os.path.isfile(fileName):
+                print "file %s exists" % fileName
+                with open(fileName,'r') as f: masters.onExchange(f)
+#                masters.updateWatchlist(year,month,day)
+                with open(fileName,'r') as f: masters.checkDaysFilings(f)
 
-                with open(fileName,'r') as f:
-                    masters.onExchange(f)
-            except IOError: print "There was an IOError of some sort"
+            else:
+                try:
+                    remotePath='ftp://ftp.sec.gov/edgar/daily-index/master.'+year+month+day+'.idx'
+                    urllib.urlretrieve(remotePath,fileName)
+                    with open(fileName,'r') as f: masters.onExchange(f)
+                #                    masters.updateWatchlist(year,month,day)
+                    with open(fileName,'r') as f: masters.checkDaysFilings(f)
+
+                except IOError: print "There was an IOError of some sort"
                 
-            finally: startObj+=inc
-
-        else: startObj+=inc
+        startObj+=inc
 
 #    for myDate in dateBlock:
 #        with open('masters/masterindex'+myDate,'r') as f:
@@ -181,57 +191,7 @@ def todate(din):
 #masterRecords=staticmethods.StaticMethods.getFormsFiledOnDay(['10-K','10-Q','8-K'],'2015','06','02')
 #staticmethods.StaticMethods.findTerms(masterRecords)
 
-loopOverDates('20150102','20150531')
-
-#masters.updateWatchlist('2015','02','02')
-#masters.updateWatchlist('2015','02','03')
-#masters.updateWatchlist('2015','02','04')
-#masters.updateWatchlist('2015','02','05')
-#masters.updateWatchlist('2015','02','06')
-
-#masters.updateWatchlist('2015','02','09')
-#masters.updateWatchlist('2015','02','10')
-#masters.updateWatchlist('2015','02','11')
-#masters.updateWatchlist('2015','02','12')
-#masters.updateWatchlist('2015','02','13')
-
-#masters.updateWatchlist('2015','02','16') Presidents day
-#masters.updateWatchlist('2015','02','17')
-#masters.updateWatchlist('2015','02','18')
-#masters.updateWatchlist('2015','02','19')
-#masters.updateWatchlist('2015','02','20')
-
-#masters.updateWatchlist('2015','02','23')
-#masters.updateWatchlist('2015','02','24')
-#masters.updateWatchlist('2015','02','25')
-#masters.updateWatchlist('2015','02','26')
-#masters.updateWatchlist('2015','02','27')
-
-#masters.updateWatchlist('2015','03','02')
-#masters.updateWatchlist('2015','03','03')
-#masters.updateWatchlist('2015','03','04')
-#masters.updateWatchlist('2015','03','05')
-#masters.updateWatchlist('2015','03','06')
-
-#masters.updateWatchlist('2015','03','09')
-#masters.updateWatchlist('2015','03','10')
-#masters.updateWatchlist('2015','03','11')
-#masters.updateWatchlist('2015','03','12')
-#masters.updateWatchlist('2015','03','13')
-
-#masters.updateWatchlist('2015','03','16')
-#masters.updateWatchlist('2015','03','17')
-#masters.updateWatchlist('2015','03','18')
-#masters.updateWatchlist('2015','03','19')
-#masters.updateWatchlist('2015','03','20')
-
-#masters.updateWatchlist('2015','03','23')
-#masters.updateWatchlist('2015','03','24')
-#masters.updateWatchlist('2015','03','25')
-#masters.updateWatchlist('2015','03','26')
-#masters.updateWatchlist('2015','03','27')
-
-#masters.updateWatchlist('2015','03','30')
-#masters.updateWatchlist('2015','03','31')
+#Keep these dates so that I can work with the files downloaded from these.
+loopOverDates('20150723','20150724')
 
 #masters.filedDelayedReport()

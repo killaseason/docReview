@@ -7,6 +7,7 @@ import sqlite3
 import time
 import urllib
 import masters
+import pickle
 
 
 #with open('regexDoc.txt','r') as f:
@@ -88,8 +89,13 @@ import masters
 #x='blah'
 #c.execute('SELECT * FROM watchlist WHERE cik=?', (x,)   )
 #print c.fetchone()
-masters.findNTs('2015','04','13')
-masters.findNTs('2015','04','14')
-masters.findNTs('2015','04','15')
-masters.findNTs('2015','04','16')
-masters.findNTs('2015','04','17')
+
+warningSigns=['10-K','8-K']
+
+with open('data/onExchange.pk', 'r') as input: onExchange=pickle.load(input)
+with open('masters/masterindex20150612','r') as f:
+    g=[line.split('|') for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in warningSigns and line.split('|')[0] in onExchange]
+print len(g)
+with open('masters/masterindex20150612','r') as f:
+    h=[line.split('|') for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in warningSigns]
+print len(h)
