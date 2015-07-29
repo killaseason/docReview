@@ -21,11 +21,14 @@ def checkDaysFilings(myFile):
     cl=re.compile(r'continued listing')
     res=re.compile(r'resign')
     wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
+    wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
     subpoena=re.compile(r'[Ss]ubpoena')
 
 
     j=len(linesToCheck)
     i=1
+
+    output=[]
 
     for record in linesToCheck:
         #        print "Getting record %02d of %02d" % (i, j)
@@ -35,32 +38,53 @@ def checkDaysFilings(myFile):
         with open(record[-1],'r') as f:
             fileText=f.read()
 
-#        ind1=len(r.findall(fileText))
-#        if ind1>0:
-#            print "\n***Material weakness***"
-#            print record, ind1
+        ind1=len(r.findall(fileText))
+        if ind1>0:
+            #            print "\n***Material weakness***"
+            #            print record, ind1
+            temp=record
+            temp.extend(["Material weakness",ind1])
+            output.append(temp)
 
-#        ind2=len(cl.findall(fileText))
-#        if ind2>0:
+        ind2=len(cl.findall(fileText))
+        if ind2>0:
 #            print "\n***Continued listing***"
 #            print record, ind2
+            temp=record
+            temp.extend(["Continued listing",ind2])
+            output.append(temp)
 
-#        ind3=len(res.findall(fileText))
-#        if ind3>0:
+        ind3=len(res.findall(fileText))
+        if ind3>0:
 #            print "\n***Resignation***"
 #            print record, ind3
+            temp=record
+            temp.extend(["Resignation",ind3])
+            output.append(temp)
 
-#This doesnt work because of wells fargo
-        ind4=len(wells.findall(fileText))
-        if ind4>0:
-            print "\n***Wells***"
-            print record, ind4
+#        ind4=len(wells.findall(fileText))
+#        if ind4>0:
+#            print "\n***Wells***"
+#            print record, ind4
 
-#        ind5=len(subpoena.findall(fileText))
-#        if ind5>0:
-#            print "\n***Subpoena***"
+        ind5=len(wellsNotice.findall(fileText))
+        if ind5>0:
+#            print "\n***Wells Notice***"
 #            print record, ind5
+            temp=record
+            temp.extend(["Wells Notice",ind5])
+            output.append(temp)
 
+        ind6=len(subpoena.findall(fileText))
+        if ind6>0:
+            #            print "\n***Subpoena***"
+#            print record, ind6
+
+            temp=record
+            temp.extend(["Got subpoena",ind6])
+            output.append(temp)
+
+        for line in output: print line, '\n'
 
 #     This section works--takes 1/30th the time to read as to download
 #        remoteFile='ftp://ftp.sec.gov/'+record[-1][:-1]

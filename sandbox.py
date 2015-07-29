@@ -90,12 +90,6 @@ import pickle
 #c.execute('SELECT * FROM watchlist WHERE cik=?', (x,)   )
 #print c.fetchone()
 
-warningSigns=['10-K','8-K']
-
-with open('data/onExchange.pk', 'r') as input: onExchange=pickle.load(input)
-with open('masters/masterindex20150612','r') as f:
-    g=[line.split('|') for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in warningSigns and line.split('|')[0] in onExchange]
-print len(g)
-with open('masters/masterindex20150612','r') as f:
-    h=[line.split('|') for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in warningSigns]
-print len(h)
+myText='Well, WElls Fargo sent me a WELLS Notice the other day, because I apparently dug 20 wells. If I had not dug those wells, I might well not have had Wells Fargo on my ass with the Wells letter.'
+wells=re.compile(r'([Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee])|([Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo]))')
+print len(wells.findall(myText))
