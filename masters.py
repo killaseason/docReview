@@ -5,8 +5,11 @@ import urllib
 import re
 import os.path
 import logging
+import random
+import ftplib
+from StringIO import StringIO
 
-def checkDaysFilings(myFile):
+def checkDaysFilings(masterReadlines):
     """
         Takes a master file as an argument and then spits out all the sketchy records associated with it. Should eventually break this out so that separate checks are run on 10-Ks and 8-Ks
     """
@@ -15,14 +18,14 @@ def checkDaysFilings(myFile):
 
     formsToCheck=['8-K']
     #Yields all records of publicly traded companies having certain specified forms
-    linesToCheck=[line.split('|') for line in myFile.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and line.split('|')[0] in onExchange]
+    linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and line.split('|')[0] in onExchange]
 
     r=re.compile(r'[Mm]aterial(?:ly)? weak')
     cl=re.compile(r'continued listing')
     res=re.compile(r'resign')
     wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
     wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
-    subpoena=re.compile(r'[Ss]ubpoena')
+    subpoena=re.compile(r'[Ss]ubpoena | [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee] | [Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy] [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
 
 
     j=len(linesToCheck)
@@ -32,59 +35,100 @@ def checkDaysFilings(myFile):
 
     for record in linesToCheck:
         #        print "Getting record %02d of %02d" % (i, j)
-        getFormFromMaster(record)
+
         i+=1
 
-        with open(record[-1],'r') as f:
-            fileText=f.read()
+#######Replacing with code to just grab the file without writing to hard drive
+#        getFormFromMaster(record)
+#
+#        with open(record[-1],'r') as f:
+#            longText=f.readlines()
+#
+#####################################
 
-        ind1=len(r.findall(fileText))
-        if ind1>0:
+        #This needs error-handling
+        ftp=ftplib.FTP('ftp.sec.gov')
+        ftp.login()
+        
+        j=0
+        longText=getFormFromEDGAR(record,ftp)
+        if longText!=None:
+
+            with open('temp/temp.txt','w') as shortText:
+                for line in longText:
+                    if j==2: break
+                    elif line[0:10]=="<FILENAME>":
+                        j+=1
+                        shortText.write(line)
+                    else: shortText.write(line)
+
+            with open('temp/temp.txt','r') as shortText:
+                fileText=shortText.read()
+
+            ind1=len(r.findall(fileText))
+            if ind1>0:
             #            print "\n***Material weakness***"
             #            print record, ind1
-            temp=record
-            temp.extend(["Material weakness",ind1])
-            output.append(temp)
+                temp=record[:]
+                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp.extend(["Material weakness",ind1])
+                output.append(temp)
 
-        ind2=len(cl.findall(fileText))
-        if ind2>0:
+            ind2=len(cl.findall(fileText))
+            if ind2>0:
 #            print "\n***Continued listing***"
 #            print record, ind2
-            temp=record
-            temp.extend(["Continued listing",ind2])
-            output.append(temp)
+                temp=record[:]
+                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp.extend(["Continued listing",ind2])
+                output.append(temp)
 
-        ind3=len(res.findall(fileText))
-        if ind3>0:
+            ind3=len(res.findall(fileText))
+            if ind3>0:
 #            print "\n***Resignation***"
 #            print record, ind3
-            temp=record
-            temp.extend(["Resignation",ind3])
-            output.append(temp)
+                temp=record[:]
+                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp.extend(["Resignation",ind3])
+                output.append(temp)
 
 #        ind4=len(wells.findall(fileText))
 #        if ind4>0:
 #            print "\n***Wells***"
 #            print record, ind4
 
-        ind5=len(wellsNotice.findall(fileText))
-        if ind5>0:
+            ind5=len(wellsNotice.findall(fileText))
+            if ind5>0:
 #            print "\n***Wells Notice***"
 #            print record, ind5
-            temp=record
-            temp.extend(["Wells Notice",ind5])
-            output.append(temp)
+                temp=record[:]
+                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp.extend(["Wells Notice",ind5])
+                output.append(temp)
 
-        ind6=len(subpoena.findall(fileText))
-        if ind6>0:
+            ind6=len(subpoena.findall(fileText))
+            if ind6>0:
             #            print "\n***Subpoena***"
 #            print record, ind6
 
-            temp=record
-            temp.extend(["Got subpoena",ind6])
-            output.append(temp)
+                temp=record[:]
+                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp.extend(["Got subpoena",ind6])
+                output.append(temp)
+    
+    
+        else:
+            print 'This should never appear: Skipping for record:', record
+            print 'Sleeping'
+            time.sleep(2)
 
-        for line in output: print line, '\n'
+
+    for line in output: print line, '\n'
+    try:ftp.quit()
+    except Exception as e:
+        print e
+        print e.args
+        ftp.close()
 
 #     This section works--takes 1/30th the time to read as to download
 #        remoteFile='ftp://ftp.sec.gov/'+record[-1][:-1]
@@ -94,6 +138,45 @@ def checkDaysFilings(myFile):
 #        print ind
 
 #        print myFile
+
+def getFormFromEDGAR(masterRecord,connection):
+    
+    #This is to be used when doing it the urllib way, not the ftplib way
+    #    remoteFile='ftp://ftp.sec.gov/'+masterRecord[-1]
+    remoteFile=masterRecord[-1]
+    #print connection.getwelcome()
+
+    gotRecord=False
+    while gotRecord==False:
+
+        t0=time.time()
+        
+        s=StringIO()
+
+        try:
+            #            temp=urllib.urlopen(remoteFile)
+            connection.retrbinary('RETR '+remoteFile,s.write)
+            #            print 'Read %s' % remoteFile
+            gotRecord=True
+        except IOError as e:
+            print 'IOError opening %s' % remoteFile
+            print e
+            print e.args
+        except Exception as f:
+            print 'There was some other kind of error.'
+            print f
+            print f.args
+        finally:
+            delay=random.randrange(1,30,1)
+#            time.sleep(delay)
+
+    outputText=s.getvalue().split('\n')
+#    outputText=temp.readlines()
+    t1=time.time()
+    print 'Total time:',t1-t0
+
+    return outputText
+
 
 
 

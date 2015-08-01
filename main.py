@@ -46,7 +46,8 @@ def loopOverDates(startDate,endDate):
                 print "file %s exists" % fileName
                 with open(fileName,'r') as f: masters.onExchange(f)
 #                masters.updateWatchlist(year,month,day)
-                with open(fileName,'r') as f: masters.checkDaysFilings(f)
+                with open(fileName,'r') as f: fileToRead=f.readlines()
+                masters.checkDaysFilings(fileToRead)
 
             else:
                 try:
@@ -54,7 +55,8 @@ def loopOverDates(startDate,endDate):
                     urllib.urlretrieve(remotePath,fileName)
                     with open(fileName,'r') as f: masters.onExchange(f)
                 #                    masters.updateWatchlist(year,month,day)
-                    with open(fileName,'r') as f: masters.checkDaysFilings(f)
+                    with open(fileName,'r') as f: fileToRead=f.readlines()
+                    masters.checkDaysFilings(fileToRead)
 
                 except IOError: print "There was an IOError of some sort"
                 
@@ -192,6 +194,8 @@ def todate(din):
 #staticmethods.StaticMethods.findTerms(masterRecords)
 
 #Keep these dates so that I can work with the files downloaded from these.
-loopOverDates('20150723','20150724')
+#loopOverDates('20150723','20150724')
+
+loopOverDates('20150724','20150724')
 
 #masters.filedDelayedReport()

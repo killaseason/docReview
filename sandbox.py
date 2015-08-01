@@ -8,6 +8,7 @@ import time
 import urllib
 import masters
 import pickle
+import ftplib
 
 
 #with open('regexDoc.txt','r') as f:
@@ -90,6 +91,15 @@ import pickle
 #c.execute('SELECT * FROM watchlist WHERE cik=?', (x,)   )
 #print c.fetchone()
 
-myText='Well, WElls Fargo sent me a WELLS Notice the other day, because I apparently dug 20 wells. If I had not dug those wells, I might well not have had Wells Fargo on my ass with the Wells letter.'
-wells=re.compile(r'([Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee])|([Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo]))')
-print len(wells.findall(myText))
+ftp=ftplib.FTP('ftp.sec.gov')
+ftp.login()
+#ftp.cwd('edgar/data/1000232/')
+#r=StringIO.StringIO()
+#ftp.retrbinary('RETR 0001000232-15-000007.txt',r.write)
+#print r.getvalue()
+
+s=StringIO.StringIO()
+ftp.retrbinary('RETR edgar/data/1554225/0001604232-15-000091.txt', s.write)
+print s.getvalue()
+
+ftp.quit()
