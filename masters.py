@@ -53,6 +53,8 @@ def checkDaysFilings(masterReadlines):
         j=0
         longText=getFormFromEDGAR(record,ftp)
         if longText!=None:
+            
+            #This should be handled with a StringIO object
 
             with open('temp/temp.txt','w') as shortText:
                 for line in longText:
@@ -65,12 +67,15 @@ def checkDaysFilings(masterReadlines):
             with open('temp/temp.txt','r') as shortText:
                 fileText=shortText.read()
 
+#These regexes should be handled by looping over each regex
+
             ind1=len(r.findall(fileText))
             if ind1>0:
             #            print "\n***Material weakness***"
             #            print record, ind1
                 temp=record[:]
-                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
                 temp.extend(["Material weakness",ind1])
                 output.append(temp)
 
@@ -79,7 +84,8 @@ def checkDaysFilings(masterReadlines):
 #            print "\n***Continued listing***"
 #            print record, ind2
                 temp=record[:]
-                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
                 temp.extend(["Continued listing",ind2])
                 output.append(temp)
 
@@ -88,7 +94,8 @@ def checkDaysFilings(masterReadlines):
 #            print "\n***Resignation***"
 #            print record, ind3
                 temp=record[:]
-                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
                 temp.extend(["Resignation",ind3])
                 output.append(temp)
 
@@ -102,7 +109,8 @@ def checkDaysFilings(masterReadlines):
 #            print "\n***Wells Notice***"
 #            print record, ind5
                 temp=record[:]
-                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
                 temp.extend(["Wells Notice",ind5])
                 output.append(temp)
 
@@ -112,8 +120,10 @@ def checkDaysFilings(masterReadlines):
 #            print record, ind6
 
                 temp=record[:]
-                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
-                temp.extend(["Got subpoena",ind6])
+                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
+                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
+
+                temp.extend(["Poss investigation",ind6])
                 output.append(temp)
     
     
@@ -124,6 +134,7 @@ def checkDaysFilings(masterReadlines):
 
 
     for line in output: print line, '\n'
+    
     try:ftp.quit()
     except Exception as e:
         print e
@@ -167,8 +178,8 @@ def getFormFromEDGAR(masterRecord,connection):
             print f
             print f.args
         finally:
-            delay=random.randrange(1,30,1)
-#            time.sleep(delay)
+            delay=random.randrange(1,5,1)
+            time.sleep(delay)
 
     outputText=s.getvalue().split('\n')
 #    outputText=temp.readlines()

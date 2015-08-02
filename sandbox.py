@@ -91,15 +91,22 @@ import ftplib
 #c.execute('SELECT * FROM watchlist WHERE cik=?', (x,)   )
 #print c.fetchone()
 
-ftp=ftplib.FTP('ftp.sec.gov')
-ftp.login()
-#ftp.cwd('edgar/data/1000232/')
-#r=StringIO.StringIO()
-#ftp.retrbinary('RETR 0001000232-15-000007.txt',r.write)
-#print r.getvalue()
+with open('masters/masterindex20150204','r') as f:
+   a=f.readlines()
 
-s=StringIO.StringIO()
-ftp.retrbinary('RETR edgar/data/1554225/0001604232-15-000091.txt', s.write)
-print s.getvalue()
+b=[line.split('|') for line in a if line[0][0].isdigit() and line.split('|')[1]=='ROYAL BANK OF CANADA']
+for line in b:
+    line[-1]='<a href=\"ftp://ftp.sec.gov/'+line[-1]+'\">link</a><br>'
+c=['|'.join(line) for line in b]
 
-ftp.quit()
+print c
+#toWrite='|'.join(b)
+
+with open('temp/temp.html','w') as f:
+    f.writelines(c)
+#    for line in toWrite:
+#        f.writelines(line)
+
+#a=['B','I','L','L','Y']
+#b='|'.join(a)
+#print b

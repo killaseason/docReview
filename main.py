@@ -179,8 +179,9 @@ def todate(din):
     return dout
 
 
-#The action starts here
+global debugMode=True
 
+#The action starts here
 #a=issuer.Issuer("1616707")
 #a.checkForm4()
 #b.getAllFilings(24)
@@ -196,6 +197,6 @@ def todate(din):
 #Keep these dates so that I can work with the files downloaded from these.
 #loopOverDates('20150723','20150724')
 
-loopOverDates('20150724','20150724')
+loopOverDates('20150730','20150730')
 
 #masters.filedDelayedReport()
