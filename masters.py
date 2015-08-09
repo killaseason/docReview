@@ -9,6 +9,34 @@ import random
 import ftplib
 from StringIO import StringIO
 
+def getTicker(inputText,cik):
+    
+    """
+        Attempts to pull ticker from 8-Ks (it generally appears in exhibit 99.1)
+    """
+
+#    print inputText
+    exchange=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq])( GS)?:\W?([A-Z]{1,4})')
+    result=exchange.search(inputText)
+
+    if result!=None:
+        toAdd=[cik,result.group(1),result.group(3)]
+        print toAdd
+
+        try:
+            with open('data/cikExchangeTicker.pk','r') as input:
+                cikExchangeTicker=pickle.load(input)
+                cikExchangeTicker.append(toAdd)
+
+        except IOError:
+            print 'File probably doesn\'t exist.'
+            cikExchangeTicker=[toAdd]
+        finally:
+            with open('data/cikExchangeTicker.pk','wb') as output:
+                pickle.dump(cikExchangeTicker,output,pickle.HIGHEST_PROTOCOL)
+
+
+
 def checkDaysFilings(masterReadlines):
     """
         Takes a master file as an argument and then spits out all the sketchy records associated with it. Should eventually break this out so that separate checks are run on 10-Ks and 8-Ks
@@ -23,9 +51,12 @@ def checkDaysFilings(masterReadlines):
     r=re.compile(r'[Mm]aterial(?:ly)? weak')
     cl=re.compile(r'continued listing')
     res=re.compile(r'resign')
+    auditor=re.compile(r'Item 4[.]01')
     wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
     wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
-    subpoena=re.compile(r'[Ss]ubpoena | [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee] | [Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy] [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
+    investigation=re.compile(r'[Ss]ubpoena | [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee] | [Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy] [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
+
+    regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change']]
 
 
     j=len(linesToCheck)
@@ -55,9 +86,11 @@ def checkDaysFilings(masterReadlines):
         if longText!=None:
             
             #This should be handled with a StringIO object
+            
+            getTicker(longText,record[0])
 
             with open('temp/temp.txt','w') as shortText:
-                for line in longText:
+                for line in longText.split('\n'):
                     if j==2: break
                     elif line[0:10]=="<FILENAME>":
                         j+=1
@@ -69,62 +102,14 @@ def checkDaysFilings(masterReadlines):
 
 #These regexes should be handled by looping over each regex
 
-            ind1=len(r.findall(fileText))
-            if ind1>0:
-            #            print "\n***Material weakness***"
-            #            print record, ind1
-                temp=record[:]
-                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
-                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
-                temp.extend(["Material weakness",ind1])
-                output.append(temp)
-
-            ind2=len(cl.findall(fileText))
-            if ind2>0:
-#            print "\n***Continued listing***"
-#            print record, ind2
-                temp=record[:]
-                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
-                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
-                temp.extend(["Continued listing",ind2])
-                output.append(temp)
-
-            ind3=len(res.findall(fileText))
-            if ind3>0:
-#            print "\n***Resignation***"
-#            print record, ind3
-                temp=record[:]
-                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
-                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
-                temp.extend(["Resignation",ind3])
-                output.append(temp)
-
-#        ind4=len(wells.findall(fileText))
-#        if ind4>0:
-#            print "\n***Wells***"
-#            print record, ind4
-
-            ind5=len(wellsNotice.findall(fileText))
-            if ind5>0:
-#            print "\n***Wells Notice***"
-#            print record, ind5
-                temp=record[:]
-                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
-                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
-                temp.extend(["Wells Notice",ind5])
-                output.append(temp)
-
-            ind6=len(subpoena.findall(fileText))
-            if ind6>0:
-            #            print "\n***Subpoena***"
-#            print record, ind6
-
-                temp=record[:]
-                #                temp[4]='ftp://ftp.sec.gov/'+temp[4][:-1]
-                temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">link</a><br>'
-
-                temp.extend(["Poss investigation",ind6])
-                output.append(temp)
+            for line in regExes:
+                ind=len(line[0].findall(fileText))
+                if ind>0:
+                    temp=record[:]
+                    temp[0]='<a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+temp[0]+'&Find=Search&owner=exclude&action=getcompany\">'+temp[0]+'</a>'
+                    temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">Link</a>'
+                    temp.extend([line[1],str(ind),'<br>'])
+                    output.append(temp)
     
     
         else:
@@ -134,6 +119,7 @@ def checkDaysFilings(masterReadlines):
 
 
     for line in output: print line, '\n'
+    return output
     
     try:ftp.quit()
     except Exception as e:
@@ -178,11 +164,11 @@ def getFormFromEDGAR(masterRecord,connection):
             print f
             print f.args
         finally:
-            delay=random.randrange(1,5,1)
-            time.sleep(delay)
+            delay=random.randrange(1,3,1)
+#            time.sleep(delay)
 
-    outputText=s.getvalue().split('\n')
-#    outputText=temp.readlines()
+#    outputText=s.getvalue().split('\n')
+    outputText=s.getvalue()
     t1=time.time()
     print 'Total time:',t1-t0
 

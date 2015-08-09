@@ -91,22 +91,63 @@ import ftplib
 #c.execute('SELECT * FROM watchlist WHERE cik=?', (x,)   )
 #print c.fetchone()
 
-with open('masters/masterindex20150204','r') as f:
-   a=f.readlines()
+#with open('masters/masterindex20150204','r') as f:
+#   a=f.readlines()
 
-b=[line.split('|') for line in a if line[0][0].isdigit() and line.split('|')[1]=='ROYAL BANK OF CANADA']
-for line in b:
-    line[-1]='<a href=\"ftp://ftp.sec.gov/'+line[-1]+'\">link</a><br>'
-c=['|'.join(line) for line in b]
+#b=[line.split('|') for line in a if line[0][0].isdigit() and line.split('|')[1]=='ROYAL BANK OF CANADA']
+#for line in b:
+#    line[-1]='<a href=\"ftp://ftp.sec.gov/'+line[-1]+'\">link</a><br>'
+#c=['|'.join(line) for line in b]
 
-print c
+#print c
 #toWrite='|'.join(b)
 
-with open('temp/temp.html','w') as f:
-    f.writelines(c)
+#with open('temp/temp.html','w') as f:
+#    f.writelines(c)
 #    for line in toWrite:
 #        f.writelines(line)
 
 #a=['B','I','L','L','Y']
 #b='|'.join(a)
 #print b
+
+#myString='(Nasdaq: CHOP) NYSE: bitchboy (NASDAQ:FB) NYSe: GM'
+#result=r.findall(myString)
+    #for pair in result:
+#    print (pair[1], pair[0])
+#print result.group(0)
+#print result.group(1)
+#print result.group(2)
+
+#myText='traded on (nasdaq gs: DB) but sometimes traded as NYSE:FU, when not otherwise traded as NASDAQ:DICK'
+#r=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq])( [Gg][Ss])?:\W{0,1}([A-Z]{1,4})')
+#fileList=['/3545/0001104659-15-042557.txt','/4187/0001104659-15-040333.txt','/1065696/0001065696-15-000035.txt']
+#result=r.findall(myText)
+#print result.group(1)
+#print result.group(3)
+#print result
+
+#for entry in fileList:
+#    with open('edgar/data'+entry,'r') as f:text=f.read()
+#    result=r.search(text)
+#    toAdd=[result.group(1),result.group(2)]
+#    print toAdd
+#    try:
+#        with open('data/cikExchangeTicker.pk','r') as input:
+#            cikExchangeTicker=pickle.load(input)
+#            cikExchangeTicker.append(toAdd)
+
+#    except IOError:
+#        print 'File probably doesn\'t exist.'
+#        cikExchangeTicker=toAdd
+#    finally:
+#        with open('data/cikExchangeTicker.pk','wb') as output:
+#            pickle.dump(cikExchangeTicker,output,pickle.HIGHEST_PROTOCOL)
+
+#print cikExchangeTicker
+
+
+myText="Item 4.01 Bitches"
+re=re.compile(r'Item 4[.]01')
+result=re.search(myText)
+print result.group(0)

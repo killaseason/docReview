@@ -41,13 +41,21 @@ def loopOverDates(startDate,endDate):
                 
             fileName='masters/masterindex'+year+month+day
             print fileName
+            outputFile='output/output_'+year+month+day+'.html'
             
             if os.path.isfile(fileName):
                 print "file %s exists" % fileName
                 with open(fileName,'r') as f: masters.onExchange(f)
 #                masters.updateWatchlist(year,month,day)
                 with open(fileName,'r') as f: fileToRead=f.readlines()
-                masters.checkDaysFilings(fileToRead)
+                if debugMode:
+                    print '****IN DEBUG MODE****'
+                    fileToRead=fileToRead[0:150]
+                results=masters.checkDaysFilings(fileToRead)
+                print results
+                with open(outputFile,'w') as HTMLOutput:
+                    for line in results:
+                        HTMLOutput.write(' '.join(line))
 
             else:
                 try:
@@ -56,7 +64,15 @@ def loopOverDates(startDate,endDate):
                     with open(fileName,'r') as f: masters.onExchange(f)
                 #                    masters.updateWatchlist(year,month,day)
                     with open(fileName,'r') as f: fileToRead=f.readlines()
-                    masters.checkDaysFilings(fileToRead)
+                    if debugMode:
+                        print '****IN DEBUG MODE****'
+                        fileToRead=fileToRead[0:150]
+                    results=masters.checkDaysFilings(fileToRead)
+                    print results
+                    with open(outputFile,'w') as HTMLOutput:
+                        for line in results:
+                            HTMLOutput.write(' '.join(line))
+
 
                 except IOError: print "There was an IOError of some sort"
                 
@@ -178,8 +194,7 @@ def todate(din):
     dout=datetime.date(int(din[:4]),int(din[4:6]),int(din[6:8]))
     return dout
 
-
-global debugMode=True
+debugMode=False
 
 #The action starts here
 #a=issuer.Issuer("1616707")
@@ -197,6 +212,6 @@ global debugMode=True
 #Keep these dates so that I can work with the files downloaded from these.
 #loopOverDates('20150723','20150724')
 
-loopOverDates('20150730','20150730')
+loopOverDates('20150805','20150807')
 
 #masters.filedDelayedReport()
