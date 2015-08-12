@@ -50,12 +50,14 @@ def loopOverDates(startDate,endDate):
                 with open(fileName,'r') as f: fileToRead=f.readlines()
                 if debugMode:
                     print '****IN DEBUG MODE****'
-                    fileToRead=fileToRead[0:150]
+                    fileToRead=fileToRead[0:500]
                 results=masters.checkDaysFilings(fileToRead)
                 print results
                 with open(outputFile,'w') as HTMLOutput:
+                    HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag</b></th><th>Matched Terms</th><th>Match Count</th></tr>')
                     for line in results:
                         HTMLOutput.write(' '.join(line))
+                    HTMLOutput.write('</table>')
 
             else:
                 try:
@@ -70,8 +72,10 @@ def loopOverDates(startDate,endDate):
                     results=masters.checkDaysFilings(fileToRead)
                     print results
                     with open(outputFile,'w') as HTMLOutput:
+                        HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag</b></th><th>Matched Terms</th><th>Match Count</th></tr>')
                         for line in results:
                             HTMLOutput.write(' '.join(line))
+                        HTMLOutput.write('</table>')
 
 
                 except IOError: print "There was an IOError of some sort"
@@ -194,7 +198,6 @@ def todate(din):
     dout=datetime.date(int(din[:4]),int(din[4:6]),int(din[6:8]))
     return dout
 
-debugMode=False
 
 #The action starts here
 #a=issuer.Issuer("1616707")
@@ -212,6 +215,7 @@ debugMode=False
 #Keep these dates so that I can work with the files downloaded from these.
 #loopOverDates('20150723','20150724')
 
-loopOverDates('20150805','20150807')
+debugMode=False
+loopOverDates('20150803','20150806')
 
 #masters.filedDelayedReport()

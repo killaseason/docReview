@@ -111,22 +111,6 @@ import ftplib
 #b='|'.join(a)
 #print b
 
-#myString='(Nasdaq: CHOP) NYSE: bitchboy (NASDAQ:FB) NYSe: GM'
-#result=r.findall(myString)
-    #for pair in result:
-#    print (pair[1], pair[0])
-#print result.group(0)
-#print result.group(1)
-#print result.group(2)
-
-#myText='traded on (nasdaq gs: DB) but sometimes traded as NYSE:FU, when not otherwise traded as NASDAQ:DICK'
-#r=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq])( [Gg][Ss])?:\W{0,1}([A-Z]{1,4})')
-#fileList=['/3545/0001104659-15-042557.txt','/4187/0001104659-15-040333.txt','/1065696/0001065696-15-000035.txt']
-#result=r.findall(myText)
-#print result.group(1)
-#print result.group(3)
-#print result
-
 #for entry in fileList:
 #    with open('edgar/data'+entry,'r') as f:text=f.read()
 #    result=r.search(text)
@@ -147,7 +131,16 @@ import ftplib
 #print cikExchangeTicker
 
 
-myText="Item 4.01 Bitches"
-re=re.compile(r'Item 4[.]01')
-result=re.search(myText)
-print result.group(0)
+#a=['1021270', 'FAMOUS DAVES OF AMERICA INC', '8-K', '20150807', 'edgar/data/1021270/0001193125-15-281337.txt\n']
+
+#r=re.compile(r'good')
+#with open('edgar/data/3545/0001104659-15-042557.txt','r') as f:g=f.read()
+#s=r.findall(g)
+#print str(s)
+
+a=['boy','girl','boy','manimal','boy','lion']
+b=set()
+for item in a:b.add(item)
+print a
+print ', '.join(b)
+

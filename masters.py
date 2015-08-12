@@ -47,6 +47,8 @@ def checkDaysFilings(masterReadlines):
     formsToCheck=['8-K']
     #Yields all records of publicly traded companies having certain specified forms
     linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and line.split('|')[0] in onExchange]
+    
+    print 'We have %02d lines to check' % len(linesToCheck)
 
     r=re.compile(r'[Mm]aterial(?:ly)? weak')
     cl=re.compile(r'continued listing')
@@ -85,9 +87,19 @@ def checkDaysFilings(masterReadlines):
         longText=getFormFromEDGAR(record,ftp)
         if longText!=None:
             
-            #This should be handled with a StringIO object
-            
-            getTicker(longText,record[0])
+            print record
+            fileName=re.compile(r'<FILENAME>([A-Za-z0-9-_]*[.]htm)')
+            htmResult=fileName.search(longText)
+            if htmResult!=None:
+                htmFile=htmResult.group(1)
+                print htmFile
+            else: print 'No matching .htm file'
+
+
+            #Matches cik to ticker (should only really be run on 8-Ks before theyre trimmed
+            #            getTicker(longText,record[0])
+
+            #This segment should be handled with a StringIO object
 
             with open('temp/temp.txt','w') as shortText:
                 for line in longText.split('\n'):
@@ -100,15 +112,29 @@ def checkDaysFilings(masterReadlines):
             with open('temp/temp.txt','r') as shortText:
                 fileText=shortText.read()
 
-#These regexes should be handled by looping over each regex
-
             for line in regExes:
-                ind=len(line[0].findall(fileText))
+                hits=line[0].findall(fileText)
+                uniqueHits=set()
+                for hit in hits: uniqueHits.add(hit)
+                ind=len(hits)
                 if ind>0:
-                    temp=record[:]
-                    temp[0]='<a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+temp[0]+'&Find=Search&owner=exclude&action=getcompany\">'+temp[0]+'</a>'
-                    temp[4]='<a href=\"ftp://ftp.sec.gov/'+temp[4][:-1]+'\">Link</a>'
-                    temp.extend([line[1],str(ind),'<br>'])
+                    temp=record[0:-1]
+                    print temp
+                    temp[0]='<tr><td><a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+temp[0]+'&Find=Search&owner=exclude&action=getcompany\">'+temp[0]+'</a></td>'
+                    temp[1]='<td>'+temp[1]+'</td>'
+                    #                    temp[2]='<td>'+temp[2]+'</td>'
+                    if htmResult!=None:
+                        filePart1='/'.join(record[4].split('/')[0:3])
+                        fileStep1=record[4][:-5].split('/')[-1]
+                        filePart2=''.join(fileStep1.split('-'))
+                        htmLink=filePart1+'/'+filePart2+'/'+htmFile
+                        temp[2]='<td><a href=\"https://www.sec.gov/Archives/'+htmLink+'\">'+temp[2]+'</a></td>'
+                    else: temp[2]='<td><a href=\"ftp://ftp.sec.gov/'+record[4][:-1]+'\">'+temp[2]+'</a></td>'
+                    temp[3]='<td>'+temp[3]+'</td>'
+                    #                    print someText
+
+
+                    temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td></tr>'])
                     output.append(temp)
     
     
