@@ -138,9 +138,42 @@ import ftplib
 #s=r.findall(g)
 #print str(s)
 
-a=['boy','girl','boy','manimal','boy','lion']
-b=set()
-for item in a:b.add(item)
-print a
-print ', '.join(b)
 
+#######
+#with open('data/cikExchangeTicker.pk','r') as f: g=pickle.load(f)
+#for rec in g: rec[1]=rec[1].upper()
+
+#b=[]
+#This removes exact duplicate entries in our mapping
+#for rec in g:
+#    if rec not in b: b.append(rec)
+
+#This gets rid of probably erroneous
+#c=[rec for rec in b if len(rec[2])>1]
+
+#Creates set of unique CIKs in mapping
+#x={rec[0] for rec in c}
+#Takes only the CIKs from the mapping (includes duplicates)
+#y=[rec[0] for rec in c]
+#Creates set of CIKS that appear more than once in mapping
+#z={rec for rec in y if y.count(rec)>1}
+
+#print c
+#print len(c)
+#with open('data/cikExchangeTicker.pk','wb') as output:
+#    pickle.dump(cikExchangeTicker,output,pickle.HIGHEST_PROTOCOL)
+
+
+with open('data/cikExchangeTicker.pk','r') as f: g=pickle.load(f)
+print g
+cik='1087456'
+
+
+links=[rec for rec in g if rec[0]==cik]
+if len(links)>1: myVal='Multiple tickers!'
+elif len(links)==0: myVal='No ticker!'
+else: myVal='<a href=\"http://finance.yahoo.com/q?s'+links[0][2]+'\">'+links[0][2]+'</a>'
+
+print len(links)
+print links
+print myVal

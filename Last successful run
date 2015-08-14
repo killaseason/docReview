@@ -1,0 +1,46 @@
+*****ERROR FIRST RUN*****
+
+Total time: 6.5716252327
+['729237', 'PARKWAY PROPERTIES INC', '10-Q', '20150803', 'edgar/data/729237/0000729237-15-000075.txt\n']
+pky-20150630x10q.htm
+Traceback (most recent call last):
+File "main.py", line 219, in <module>
+loopOverDates('20150803','20150807')
+File "main.py", line 54, in loopOverDates
+results=masters.checkDaysFilings(fileToRead)
+File "/Users/madelinezilfi/Python/docReview/masters.py", line 83, in checkDaysFilings
+ftp=ftplib.FTP('ftp.sec.gov')
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 120, in __init__
+self.connect(host)
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 138, in connect
+self.welcome = self.getresp()
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 215, in getresp
+resp = self.getmultiline()
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 201, in getmultiline
+line = self.getline()
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 191, in getline
+if not line: raise EOFError
+EOFError
+
+*****SECOND ERROR******
+
+['103145', 'VEECO INSTRUMENTS INC', '10-Q', '20150803', 'edgar/data/103145/0001410578-15-000433.txt\n']
+a15-11903_110q.htm
+Traceback (most recent call last):
+File "main.py", line 219, in <module>
+loopOverDates('20150803','20150803')
+File "main.py", line 54, in loopOverDates
+results=masters.checkDaysFilings(fileToRead)
+File "/Users/madelinezilfi/Python/docReview/masters.py", line 83, in checkDaysFilings
+ftp=ftplib.FTP('ftp.sec.gov')
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 120, in __init__
+self.connect(host)
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 138, in connect
+self.welcome = self.getresp()
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 215, in getresp
+resp = self.getmultiline()
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 201, in getmultiline
+line = self.getline()
+File "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/ftplib.py", line 191, in getline
+if not line: raise EOFError
+EOFError

@@ -9,6 +9,24 @@ import random
 import ftplib
 from StringIO import StringIO
 
+def getYahooLink(cik):
+
+    """
+        Returns a link to (hopefully) the Yahoo page with the company's financial info.
+        
+    """
+    
+    with open('data/cikExchangeTicker.pk','r') as f: g=pickle.load(f)
+    links=[rec for rec in g if rec[0]==cik]
+    print cik, links, len(links)
+
+    if len(links)>1: myVal='Multiple tickers!'
+    elif len(links)==0: myVal='No ticker!'
+    else: myVal='<a href=\"http://finance.yahoo.com/q?s='+links[0][2]+'\">'+links[0][2]+'</a>'
+
+    return myVal
+
+
 def getTicker(inputText,cik):
     
     """
@@ -20,13 +38,22 @@ def getTicker(inputText,cik):
     result=exchange.search(inputText)
 
     if result!=None:
-        toAdd=[cik,result.group(1),result.group(3)]
-        print toAdd
+        #Adds [CIK, Exchange, Ticker]
+        toAdd=[cik,result.group(1).upper(),result.group(3)]
+        #        print toAdd
 
         try:
             with open('data/cikExchangeTicker.pk','r') as input:
                 cikExchangeTicker=pickle.load(input)
-                cikExchangeTicker.append(toAdd)
+                if toAdd not in cikExchangeTicker:
+                    uniques={company[0] for company in cikExchangeTicker}
+                    if toAdd[0] not in uniques:
+                        cikExchangeTicker.append(toAdd)
+                        print 'Added mapping', toAdd
+                    else:
+                        currentMapping=[entry for entry in cikExchangeTicker if entry[0]==toAdd[0]]
+                        print 'Current mappings are:', currentMapping,'. Did not add:',toAdd
+                else: print toAdd, 'already in mapping'
 
         except IOError:
             print 'File probably doesn\'t exist.'
@@ -34,6 +61,7 @@ def getTicker(inputText,cik):
         finally:
             with open('data/cikExchangeTicker.pk','wb') as output:
                 pickle.dump(cikExchangeTicker,output,pickle.HIGHEST_PROTOCOL)
+    else: print 'Could not find a ticker.'
 
 
 
@@ -44,7 +72,9 @@ def checkDaysFilings(masterReadlines):
     
     with open('data/onExchange.pk', 'r') as input: onExchange=pickle.load(input)
 
-    formsToCheck=['8-K']
+    formsToCheck=['10-Q']
+#    formsToCheck=['10-Q','8-K']
+#    formsToCheck=['10-K','6-K','20-F']
     #Yields all records of publicly traded companies having certain specified forms
     linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and line.split('|')[0] in onExchange]
     
@@ -87,17 +117,17 @@ def checkDaysFilings(masterReadlines):
         longText=getFormFromEDGAR(record,ftp)
         if longText!=None:
             
-            print record
+            #            print record
             fileName=re.compile(r'<FILENAME>([A-Za-z0-9-_]*[.]htm)')
             htmResult=fileName.search(longText)
             if htmResult!=None:
                 htmFile=htmResult.group(1)
-                print htmFile
+            #                print htmFile
             else: print 'No matching .htm file'
 
 
             #Matches cik to ticker (should only really be run on 8-Ks before theyre trimmed
-            #            getTicker(longText,record[0])
+            getTicker(longText,record[0])
 
             #This segment should be handled with a StringIO object
 
@@ -119,7 +149,9 @@ def checkDaysFilings(masterReadlines):
                 ind=len(hits)
                 if ind>0:
                     temp=record[0:-1]
-                    print temp
+                    #                    print temp
+                    yahooLink=getYahooLink(temp[0])
+
                     temp[0]='<tr><td><a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+temp[0]+'&Find=Search&owner=exclude&action=getcompany\">'+temp[0]+'</a></td>'
                     temp[1]='<td>'+temp[1]+'</td>'
                     #                    temp[2]='<td>'+temp[2]+'</td>'
@@ -132,9 +164,10 @@ def checkDaysFilings(masterReadlines):
                     else: temp[2]='<td><a href=\"ftp://ftp.sec.gov/'+record[4][:-1]+'\">'+temp[2]+'</a></td>'
                     temp[3]='<td>'+temp[3]+'</td>'
                     #                    print someText
+                    
 
 
-                    temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td></tr>'])
+                    temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td><td>'+yahooLink+'</td></tr>'])
                     output.append(temp)
     
     

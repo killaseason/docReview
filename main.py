@@ -54,7 +54,7 @@ def loopOverDates(startDate,endDate):
                 results=masters.checkDaysFilings(fileToRead)
                 print results
                 with open(outputFile,'w') as HTMLOutput:
-                    HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag</b></th><th>Matched Terms</th><th>Match Count</th></tr>')
+                    HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag</b></th><th>Matched Terms</th><th>Match Count</th><th>Stock Price</th></tr>')
                     for line in results:
                         HTMLOutput.write(' '.join(line))
                     HTMLOutput.write('</table>')
@@ -72,7 +72,7 @@ def loopOverDates(startDate,endDate):
                     results=masters.checkDaysFilings(fileToRead)
                     print results
                     with open(outputFile,'w') as HTMLOutput:
-                        HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag</b></th><th>Matched Terms</th><th>Match Count</th></tr>')
+                        HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag</b></th><th>Matched Terms</th><th>Match Count</th><th>Stock Price</th></tr>')
                         for line in results:
                             HTMLOutput.write(' '.join(line))
                         HTMLOutput.write('</table>')
@@ -216,6 +216,6 @@ def todate(din):
 #loopOverDates('20150723','20150724')
 
 debugMode=False
-loopOverDates('20150803','20150806')
+loopOverDates('20150813','20150813')
 
 #masters.filedDelayedReport()
