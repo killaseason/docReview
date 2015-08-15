@@ -9,6 +9,7 @@ import urllib
 import masters
 import pickle
 import ftplib
+import xml.etree.ElementTree as ET
 
 
 #with open('regexDoc.txt','r') as f:
@@ -139,7 +140,6 @@ import ftplib
 #print str(s)
 
 
-#######
 #with open('data/cikExchangeTicker.pk','r') as f: g=pickle.load(f)
 #for rec in g: rec[1]=rec[1].upper()
 
@@ -164,16 +164,20 @@ import ftplib
 #    pickle.dump(cikExchangeTicker,output,pickle.HIGHEST_PROTOCOL)
 
 
+#print masters.getYahooData('1178253')
+
 with open('data/cikExchangeTicker.pk','r') as f: g=pickle.load(f)
 print g
-cik='1087456'
+print len(g)
+toRemove=[item for item in g if item[2]=="MKT"]
 
+#toRemove=[]
+#toAdd=[['1350102', 'NASDAQ', 'ASTI'],['1362705', 'NYSE', 'SN']]
+for item in toRemove:g.remove(item)
+print len(g)
+#for item in toAdd:g.append(item)
+#print len(g)
 
-links=[rec for rec in g if rec[0]==cik]
-if len(links)>1: myVal='Multiple tickers!'
-elif len(links)==0: myVal='No ticker!'
-else: myVal='<a href=\"http://finance.yahoo.com/q?s'+links[0][2]+'\">'+links[0][2]+'</a>'
+#with open('data/cikExchangeTicker.pk','wb') as output: pickle.dump(g,output,pickle.HIGHEST_PROTOCOL)
+#with open('data/test.pk','wb') as output: pickle.dump(g,output,pickle.HIGHEST_PROTOCOL)
 
-print len(links)
-print links
-print myVal

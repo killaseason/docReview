@@ -8,6 +8,42 @@ import logging
 import random
 import ftplib
 from StringIO import StringIO
+import xml.etree.ElementTree as ET
+
+def getYahooData(cik):
+
+
+    with open('data/cikExchangeTicker.pk','r') as f: g=pickle.load(f)
+    links=[rec for rec in g if rec[0]==cik]
+    print cik, links, len(links)
+    
+    if len(links)>1:
+        return ['Multiple tickers!','Multiple tickers!','Multiple tickers!','Multiple tickers!']
+    elif len(links)==0:
+        return ['No ticker!','No ticker!','No ticker!','No ticker!']
+    else:
+
+        YQL='https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.quotes%20where%20symbol%20in%20(%22'+links[0][2]+'%22)&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys'
+    
+        tree=ET.parse(urllib.urlopen(YQL))
+        root=tree.getroot()
+    
+        #This is a truly terrible way to do this: there could be multiple nodes
+        for node in root.iter('ChangeinPercent'):
+            change1Day=node.text
+            if change1Day==None: change1Day='N/A'
+        for node in root.iter('MarketCapitalization'):
+            marketCap=node.text
+            if marketCap==None: marketCap='N/A'
+        for node in root.iter('PercentChangeFromTwoHundreddayMovingAverage'):
+            change200Days=node.text
+            if change200Days==None: change200Days='N/A'
+        for node in root.iter('PercentChangeFromFiftydayMovingAverage'):
+            change50Days=node.text
+            if change50Days==None: change50Days='N/A'
+    
+        print [change1Day,change50Days,change200Days,marketCap]
+        return [change1Day,change50Days,change200Days,marketCap]
 
 def getYahooLink(cik):
 
@@ -34,7 +70,7 @@ def getTicker(inputText,cik):
     """
 
 #    print inputText
-    exchange=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq])( GS)?:\W?([A-Z]{1,4})')
+    exchange=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq]|OTC)( GS)?:\W?([A-Z]{1,4})')
     result=exchange.search(inputText)
 
     if result!=None:
@@ -52,7 +88,7 @@ def getTicker(inputText,cik):
                         print 'Added mapping', toAdd
                     else:
                         currentMapping=[entry for entry in cikExchangeTicker if entry[0]==toAdd[0]]
-                        print 'Current mappings are:', currentMapping,'. Did not add:',toAdd
+                        print 'Current mappings are:', currentMapping,'. Add:',toAdd,'?'
                 else: print toAdd, 'already in mapping'
 
         except IOError:
@@ -72,7 +108,9 @@ def checkDaysFilings(masterReadlines):
     
     with open('data/onExchange.pk', 'r') as input: onExchange=pickle.load(input)
 
-    formsToCheck=['10-Q']
+    formsToCheck=['8-K']
+#    formsToCheck=['10-Q','10-K','NT 10-Q','10-K/A','10-Q/A']
+#    formsToCheck=['10-Q']
 #    formsToCheck=['10-Q','8-K']
 #    formsToCheck=['10-K','6-K','20-F']
     #Yields all records of publicly traded companies having certain specified forms
@@ -142,6 +180,7 @@ def checkDaysFilings(masterReadlines):
             with open('temp/temp.txt','r') as shortText:
                 fileText=shortText.read()
 
+#This section is completely fucked up and unmanageable.
             for line in regExes:
                 hits=line[0].findall(fileText)
                 uniqueHits=set()
@@ -151,9 +190,10 @@ def checkDaysFilings(masterReadlines):
                     temp=record[0:-1]
                     #                    print temp
                     yahooLink=getYahooLink(temp[0])
+                    #                    yahooData=getYahooData(temp[0])
 
                     temp[0]='<tr><td><a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+temp[0]+'&Find=Search&owner=exclude&action=getcompany\">'+temp[0]+'</a></td>'
-                    temp[1]='<td>'+temp[1]+'</td>'
+                    temp[1]='<td>'+temp[1][0:20].title()+'</td>'
                     #                    temp[2]='<td>'+temp[2]+'</td>'
                     if htmResult!=None:
                         filePart1='/'.join(record[4].split('/')[0:3])
@@ -167,7 +207,7 @@ def checkDaysFilings(masterReadlines):
                     
 
 
-                    temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td><td>'+yahooLink+'</td></tr>'])
+#                    temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td><td>'+yahooLink+'</td><td>'+yahooData[0]+'</td><td>'+yahooData[1]+'</td><td>'+yahooData[2]+'</td><td>'+yahooData[3]+'</td></tr>'])
                     output.append(temp)
     
     
@@ -177,14 +217,15 @@ def checkDaysFilings(masterReadlines):
             time.sleep(2)
 
 
-    for line in output: print line, '\n'
-    return output
-    
+#    for line in output: print line, '\n'
+
     try:ftp.quit()
     except Exception as e:
         print e
         print e.args
         ftp.close()
+
+    return output
 
 #     This section works--takes 1/30th the time to read as to download
 #        remoteFile='ftp://ftp.sec.gov/'+record[-1][:-1]
