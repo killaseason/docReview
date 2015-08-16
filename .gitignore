@@ -10,3 +10,5 @@
 masters/
 
 *.html
+
+*.pyc
