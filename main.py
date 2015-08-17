@@ -216,6 +216,6 @@ def todate(din):
 #loopOverDates('20150723','20150724')
 
 debugMode=False
-loopOverDates('20150801','20150813')
+loopOverDates('20150811','20150813')
 
 #masters.filedDelayedReport()

@@ -10,9 +10,68 @@ import ftplib
 from StringIO import StringIO
 import xml.etree.ElementTree as ET
 
+def isNotOTC(cik):
+    """
+        Want to check if something is traded OTC. If not, we should review its forms.
+    """
+
+    with open('data/cikExchangeTicker.pk','r') as f: mappings=pickle.load(f)
+
+    currentMapping=[line for line in mappings if line[0]==cik]
+
+    if currentMapping==[]: return True
+    else:
+        if currentMapping[0][1]=='OTC': return False
+        else: return True
+
+
+def checkMappings():
+    """
+        Checks that for all cik-ticker mappings, looking up the ticker on EDGAR gets to page associated with the cik
+    """
+
+    with open('data/cikExchangeTicker.pk','r') as f: mappings=pickle.load(f)
+
+    newMappings=[]
+
+    for mapping in mappings:
+        print 'Checking ticker symbol:',mapping[2]
+        if checkMapping(mapping): newMappings.append(mapping)
+
+    with open('data/cikExchangeTicker.pk','wb') as output:pickle.dump(newMappings,output,pickle.HIGHEST_PROTOCOL)
+
+def checkMapping(input):
+    """
+        Takes a cik-exchange-ticker mapping and checks that an EDGAR search for the ticker returns the page for the mapping.
+    """
+
+    r=re.compile(r'(CIK=)([0-9]{10})')
+
+    f=urllib.urlopen('https://www.sec.gov/cgi-bin/browse-edgar?CIK='+input[2]+'&Find=Search&owner=exclude&action=getcompany')
+
+#    with open('temp/EDGAR.txt','r') as f: g=f.read()
+    g=f.read()
+    result=r.search(g)
+    if result==None:
+        print '**ERROR** ticker ',input[2],' matches to no cik'
+        return False
+    else:
+        returnedCik=result.group(2).lstrip('0')
+        if input[0]==returnedCik:
+            print 'Matched:', input[0],returnedCik
+            return True
+        else:
+            print '**NO MATCH**:', input[0],returnedCik
+            return False
+
+#    print f.read()
+
+
 def getYahooData(cik):
-
-
+    """
+        Returns a 4-element list, of data from a YQL query and/or error messages.
+    """
+    
     with open('data/cikExchangeTicker.pk','r') as f: g=pickle.load(f)
     links=[rec for rec in g if rec[0]==cik]
     print cik, links, len(links)
@@ -82,13 +141,15 @@ def getTicker(inputText,cik):
             with open('data/cikExchangeTicker.pk','r') as input:
                 cikExchangeTicker=pickle.load(input)
                 if toAdd not in cikExchangeTicker:
-                    uniques={company[0] for company in cikExchangeTicker}
-                    if toAdd[0] not in uniques:
-                        cikExchangeTicker.append(toAdd)
-                        print 'Added mapping', toAdd
-                    else:
-                        currentMapping=[entry for entry in cikExchangeTicker if entry[0]==toAdd[0]]
-                        print 'Current mappings are:', currentMapping,'. Add:',toAdd,'?'
+                    if checkMapping(toAdd):
+                        uniques={company[0] for company in cikExchangeTicker}
+                        if toAdd[0] not in uniques:
+                            cikExchangeTicker.append(toAdd)
+                            print 'Added mapping', toAdd
+                        else:
+                            currentMapping=[entry for entry in cikExchangeTicker if entry[0]==toAdd[0]]
+                            print 'Current mappings are:', currentMapping,'. Add:',toAdd,'?'
+                    else: print toAdd, ' is not a valid mapping; did not add.'
                 else: print toAdd, 'already in mapping'
 
         except IOError:
@@ -108,13 +169,16 @@ def checkDaysFilings(masterReadlines):
     
     with open('data/onExchange.pk', 'r') as input: onExchange=pickle.load(input)
 
-    formsToCheck=['8-K']
+#    formsToCheck=['8-K']
 #    formsToCheck=['10-Q','10-K','NT 10-Q','10-K/A','10-Q/A']
 #    formsToCheck=['10-Q']
 #    formsToCheck=['10-Q','8-K']
-#    formsToCheck=['10-K','6-K','20-F']
+    formsToCheck=['6-K','20-F']
     #Yields all records of publicly traded companies having certain specified forms
-    linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and line.split('|')[0] in onExchange]
+    #    linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and line.split('|')[0] in onExchange]
+    
+    linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and isNotOTC(line.split('|')[0])]
+    
     
     print 'We have %02d lines to check' % len(linesToCheck)
 
@@ -190,7 +254,7 @@ def checkDaysFilings(masterReadlines):
                     temp=record[0:-1]
                     #                    print temp
                     yahooLink=getYahooLink(temp[0])
-                    #                    yahooData=getYahooData(temp[0])
+                    yahooData=getYahooData(temp[0])
 
                     temp[0]='<tr><td><a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+temp[0]+'&Find=Search&owner=exclude&action=getcompany\">'+temp[0]+'</a></td>'
                     temp[1]='<td>'+temp[1][0:20].title()+'</td>'
@@ -207,7 +271,7 @@ def checkDaysFilings(masterReadlines):
                     
 
 
-#                    temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td><td>'+yahooLink+'</td><td>'+yahooData[0]+'</td><td>'+yahooData[1]+'</td><td>'+yahooData[2]+'</td><td>'+yahooData[3]+'</td></tr>'])
+                    temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td><td>'+yahooLink+'</td><td>'+yahooData[0]+'</td><td>'+yahooData[1]+'</td><td>'+yahooData[2]+'</td><td>'+yahooData[3]+'</td></tr>'])
                     output.append(temp)
     
     
