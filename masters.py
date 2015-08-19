@@ -10,6 +10,136 @@ import ftplib
 from StringIO import StringIO
 import xml.etree.ElementTree as ET
 
+def writeOutput(outputBlock,opYear,opMonth,opDay):
+
+    outputFile='output/output_TESTING'+opYear+opMonth+opDay+'.html'
+
+    with open(outputFile,'w') as HTMLOutput:
+        HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag (#)</b></th><th>Matched Terms</th><th>Stock Price</th><th>1Day</th><th>50Day</th><th>200Day</th><th>Cap</th></tr>')
+        for line in outputBlock:
+            HTMLOutput.write(' '.join(line))
+        HTMLOutput.write('</table>')
+
+
+def formatOutput(outputBlock):
+    """
+        Adds HTML tags to output so that it will display nicely when written to file
+    """
+    
+    formattedResults=[]
+    
+    for line in outputBlock:
+        
+        yahooData=getYahooData(line[0])
+        yahooLink=getYahooLink(line[0])
+        
+        col0='<tr><td><a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+line[0]+'&Find=Search&owner=exclude&action=getcompany\">'+line[0]+'</a></td>'
+        col1='<td>'+line[1][0:20].title()+'</td>'
+        col2=line[2] #Already formatted to have <td> tags
+        col3='<td>'+line[3]+'</td>'
+        col4a=[rec[0]+' ('+str(rec[2])+')' for rec in line[4]]
+        col4b='<br>'.join(col4a)
+        col4='<td>'+col4b+'</td>'
+        col5a=[', '.join(rec[1]) for rec in line[5]]
+        col5='<td>'+'<br>'.join(col5a)+'</td>'
+        col6='<td>'+yahooLink+'</td>'
+        col7='<td>'+yahooData[0]+'</td>'
+        col8='<td>'+yahooData[1]+'</td>'
+        col9='<td>'+yahooData[2]+'</td>'
+        col10='<td>'+yahooData[3]+'</td></tr>'
+    
+        print [col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10]
+        formattedResults.append([col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10])
+    
+    return formattedResults
+
+
+def getHtmFile(record,toSearch):
+    """
+        Searches through text file and attempts to return the .htm file associated w filing
+    """
+    
+    fileName=re.compile(r'<FILENAME>([A-Za-z0-9-_]*[.]htm)')
+    htmResult=fileName.search(toSearch)
+
+    if htmResult!=None:
+        filePart1='/'.join(record[4].split('/')[0:3])
+        fileStep1=record[4][:-5].split('/')[-1]
+        filePart2=''.join(fileStep1.split('-'))
+        htmLink=filePart1+'/'+filePart2+'/'+htmResult.group(1)
+        return '<td><a href=\"https://www.sec.gov/Archives/'+htmLink+'\">'+record[2]+'</a></td>'
+
+    else:
+        return '<td><a href=\"ftp://ftp.sec.gov/'+record[4][:-1]+'\">'+record[2]+'</a></td>'
+
+
+def stripExhibits(input):
+    #    print 'running'
+    temp=StringIO()
+
+    j=0
+    for line in input.split('\n'):
+        if j==2:
+            print 'encountered second filename'
+            break
+        elif line[0:10]=="<FILENAME>":
+            print 'found one', line
+            j+=1
+            temp.write(line)
+        else:
+            #            'no prob here', line
+            temp.write(line)
+    return temp.getvalue()
+
+#return '\n'.join(temp)
+
+def check8K(record,input,regExes,year,month,day):
+    
+    print 'Running check8K on', record
+
+    htmFileName=getHtmFile(record,input)
+            
+    #Matches cik to ticker (should only really be run on 8-Ks before theyre trimmed
+    getTicker(input,record[0])
+    
+    fileText=stripExhibits(input)
+
+    warningSigns=[]
+
+    #This section is completely fucked up and unmanageable.
+    for line in regExes:
+        hits=line[0].findall(fileText)
+        uniqueHits=set()
+        for hit in hits: uniqueHits.add(hit)
+        ind=len(hits)
+        
+        #If there are one or more hits for a given regex, save for later display.
+        if ind>0: warningSigns.append([line[1],uniqueHits,len(hits)])
+
+    #This is the preferred way to test for non-empty list
+    if warningSigns:
+            
+        temp=record[0:-1]
+        print 'printing temp',temp
+
+        cik=temp[0]
+
+    #    yahooLink=getYahooLink(cik)
+    #    yahooData=getYahooData(cik)
+                    
+        col0=cik
+        col1=temp[1][0:20].title()
+        col2=htmFileName
+        col3=temp[3]
+        col4=warningSigns
+        col5=warningSigns
+
+        return [col0,col1,col2,col3,col4,col5]
+
+    else: return None
+
+
+
 def isNotOTC(cik):
     """
         Want to check if something is traded OTC. If not, we should review its forms.
@@ -162,24 +292,22 @@ def getTicker(inputText,cik):
 
 
 
-def checkDaysFilings(masterReadlines):
+def checkDaysFilings(masterReadlines,year,month,day):
     """
         Takes a master file as an argument and then spits out all the sketchy records associated with it. Should eventually break this out so that separate checks are run on 10-Ks and 8-Ks
     """
     
     with open('data/onExchange.pk', 'r') as input: onExchange=pickle.load(input)
 
-#    formsToCheck=['8-K']
+    formsToCheck=['8-K','6-K']
 #    formsToCheck=['10-Q','10-K','NT 10-Q','10-K/A','10-Q/A']
+#    formsToCheck=['10-K','NT 10-Q','10-K/A','10-Q/A']
 #    formsToCheck=['10-Q']
-#    formsToCheck=['10-Q','8-K']
-    formsToCheck=['6-K','20-F']
-    #Yields all records of publicly traded companies having certain specified forms
-    #    linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and line.split('|')[0] in onExchange]
-    
+#    formsToCheck=['10-Q','8-K','6-K']
+#    formsToCheck=['6-K','20-F']
+
     linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and isNotOTC(line.split('|')[0])]
-    
-    
+ 
     print 'We have %02d lines to check' % len(linesToCheck)
 
     r=re.compile(r'[Mm]aterial(?:ly)? weak')
@@ -193,23 +321,17 @@ def checkDaysFilings(masterReadlines):
     regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change']]
 
 
+    newOutput=[]
+
     j=len(linesToCheck)
     i=1
 
     output=[]
 
     for record in linesToCheck:
-        #        print "Getting record %02d of %02d" % (i, j)
+        print "Getting record %02d of %02d" % (i, j)
 
         i+=1
-
-#######Replacing with code to just grab the file without writing to hard drive
-#        getFormFromMaster(record)
-#
-#        with open(record[-1],'r') as f:
-#            longText=f.readlines()
-#
-#####################################
 
         #This needs error-handling
         ftp=ftplib.FTP('ftp.sec.gov')
@@ -219,60 +341,65 @@ def checkDaysFilings(masterReadlines):
         longText=getFormFromEDGAR(record,ftp)
         if longText!=None:
             
-            #            print record
-            fileName=re.compile(r'<FILENAME>([A-Za-z0-9-_]*[.]htm)')
-            htmResult=fileName.search(longText)
-            if htmResult!=None:
-                htmFile=htmResult.group(1)
+            if record[2] in ['8-K','6-K']:
+                tempResult=check8K(record,longText,regExes,year,month,day)
+                if tempResult!=None:
+                    newOutput.append(tempResult)
+
+            else:
+                fileName=re.compile(r'<FILENAME>([A-Za-z0-9-_]*[.]htm)')
+                htmResult=fileName.search(longText)
+                if htmResult!=None:
+                    htmFile=htmResult.group(1)
             #                print htmFile
-            else: print 'No matching .htm file'
+                else: print 'No matching .htm file'
 
 
             #Matches cik to ticker (should only really be run on 8-Ks before theyre trimmed
-            getTicker(longText,record[0])
+                getTicker(longText,record[0])
 
             #This segment should be handled with a StringIO object
 
-            with open('temp/temp.txt','w') as shortText:
-                for line in longText.split('\n'):
-                    if j==2: break
-                    elif line[0:10]=="<FILENAME>":
-                        j+=1
-                        shortText.write(line)
-                    else: shortText.write(line)
+                with open('temp/temp.txt','w') as shortText:
+                    for line in longText.split('\n'):
+                        if j==2: break
+                        elif line[0:10]=="<FILENAME>":
+                            j+=1
+                            shortText.write(line)
+                        else: shortText.write(line)
 
-            with open('temp/temp.txt','r') as shortText:
-                fileText=shortText.read()
+                with open('temp/temp.txt','r') as shortText:
+                    fileText=shortText.read()
 
 #This section is completely fucked up and unmanageable.
-            for line in regExes:
-                hits=line[0].findall(fileText)
-                uniqueHits=set()
-                for hit in hits: uniqueHits.add(hit)
-                ind=len(hits)
-                if ind>0:
-                    temp=record[0:-1]
+                for line in regExes:
+                    hits=line[0].findall(fileText)
+                    uniqueHits=set()
+                    for hit in hits: uniqueHits.add(hit)
+                    ind=len(hits)
+                    if ind>0:
+                        temp=record[0:-1]
                     #                    print temp
-                    yahooLink=getYahooLink(temp[0])
-                    yahooData=getYahooData(temp[0])
+                        yahooLink=getYahooLink(temp[0])
+                        yahooData=getYahooData(temp[0])
 
-                    temp[0]='<tr><td><a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+temp[0]+'&Find=Search&owner=exclude&action=getcompany\">'+temp[0]+'</a></td>'
-                    temp[1]='<td>'+temp[1][0:20].title()+'</td>'
+                        temp[0]='<tr><td><a href=\"https://www.sec.gov/cgi-bin/browse-edgar?CIK='+temp[0]+'&Find=Search&owner=exclude&action=getcompany\">'+temp[0]+'</a></td>'
+                        temp[1]='<td>'+temp[1][0:20].title()+'</td>'
                     #                    temp[2]='<td>'+temp[2]+'</td>'
-                    if htmResult!=None:
-                        filePart1='/'.join(record[4].split('/')[0:3])
-                        fileStep1=record[4][:-5].split('/')[-1]
-                        filePart2=''.join(fileStep1.split('-'))
-                        htmLink=filePart1+'/'+filePart2+'/'+htmFile
-                        temp[2]='<td><a href=\"https://www.sec.gov/Archives/'+htmLink+'\">'+temp[2]+'</a></td>'
-                    else: temp[2]='<td><a href=\"ftp://ftp.sec.gov/'+record[4][:-1]+'\">'+temp[2]+'</a></td>'
-                    temp[3]='<td>'+temp[3]+'</td>'
+                        if htmResult!=None:
+                            filePart1='/'.join(record[4].split('/')[0:3])
+                            fileStep1=record[4][:-5].split('/')[-1]
+                            filePart2=''.join(fileStep1.split('-'))
+                            htmLink=filePart1+'/'+filePart2+'/'+htmFile
+                            temp[2]='<td><a href=\"https://www.sec.gov/Archives/'+htmLink+'\">'+temp[2]+'</a></td>'
+                        else: temp[2]='<td><a href=\"ftp://ftp.sec.gov/'+record[4][:-1]+'\">'+temp[2]+'</a></td>'
+                        temp[3]='<td>'+temp[3]+'</td>'
                     #                    print someText
                     
 
 
-                    temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td><td>'+yahooLink+'</td><td>'+yahooData[0]+'</td><td>'+yahooData[1]+'</td><td>'+yahooData[2]+'</td><td>'+yahooData[3]+'</td></tr>'])
-                    output.append(temp)
+                        temp.extend(['<td>'+line[1]+'</td>','<td>'+', '.join(uniqueHits)+'</td>','<td>'+str(ind)+'</td><td>'+yahooLink+'</td><td>'+yahooData[0]+'</td><td>'+yahooData[1]+'</td><td>'+yahooData[2]+'</td><td>'+yahooData[3]+'</td></tr>'])
+                        output.append(temp)
     
     
         else:
@@ -288,17 +415,12 @@ def checkDaysFilings(masterReadlines):
         print e
         print e.args
         ftp.close()
+    
+    #NB: Date should not be hard-coded.
+    writeOutput(formatOutput(newOutput),year,month,day)
 
     return output
 
-#     This section works--takes 1/30th the time to read as to download
-#        remoteFile='ftp://ftp.sec.gov/'+record[-1][:-1]
-
-#        fileText=urllib.urlopen(remoteFile).read()
-#        ind=len(r.findall(fileText))
-#        print ind
-
-#        print myFile
 
 def getFormFromEDGAR(masterRecord,connection):
     

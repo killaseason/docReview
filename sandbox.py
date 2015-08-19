@@ -6,7 +6,7 @@ import dbm
 import sqlite3
 import time
 import urllib
-import masters
+#import masters
 import pickle
 import ftplib
 import xml.etree.ElementTree as ET
@@ -166,18 +166,30 @@ import xml.etree.ElementTree as ET
 
 #print masters.getYahooData('1178253')
 
-with open('data/cikExchangeTicker.pk','r') as f: g=pickle.load(f)
-print g
-print len(g)
-toRemove=[item for item in g if item[2]=="MKT"]
+from masters import check8K
+from masters import getHtmFile
+r=re.compile(r'[Mm]aterial(?:ly)? weak')
+cl=re.compile(r'continued listing')
+res=re.compile(r'resign')
+auditor=re.compile(r'Item 4[.]01')
+wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
+wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
+investigation=re.compile(r'[Ss]ubpoena | [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee] | [Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy] [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
+t=re.compile(r'[Cc]ompany')
+    
+#regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change'],[t,'bullshit']]
 
-#toRemove=[]
-#toAdd=[['1350102', 'NASDAQ', 'ASTI'],['1362705', 'NYSE', 'SN']]
-for item in toRemove:g.remove(item)
-print len(g)
-#for item in toAdd:g.append(item)
-#print len(g)
+#b=['1000683','BLONDER TONGUE LABORATORIES INC','10-Q','20150814','edgar/data/1000683/0001144204-15-049290.txt\n']
 
-#with open('data/cikExchangeTicker.pk','wb') as output: pickle.dump(g,output,pickle.HIGHEST_PROTOCOL)
-#with open('data/test.pk','wb') as output: pickle.dump(g,output,pickle.HIGHEST_PROTOCOL)
+#with open ('edgar/data/16732/0000016732-15-000013.txt','r') as a:f=a.read()
+#print check8K(b,f,regExes)
+#print getHtmFile(b,f)
+
+#q=['a','b']
+
+#with open('data/fuck.pk','wb') as x: pickle.dump(q,x,pickle.HIGHEST_PROTOCOL)
+q=[]
+with open('data/cikExchangeTicker.pk','wb') as x: pickle.dump(q,x,pickle.HIGHEST_PROTOCOL)
+
+
 
