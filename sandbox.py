@@ -6,7 +6,7 @@ import dbm
 import sqlite3
 import time
 import urllib
-#import masters
+import masters
 import pickle
 import ftplib
 import xml.etree.ElementTree as ET
@@ -188,8 +188,22 @@ t=re.compile(r'[Cc]ompany')
 #q=['a','b']
 
 #with open('data/fuck.pk','wb') as x: pickle.dump(q,x,pickle.HIGHEST_PROTOCOL)
-q=[]
-with open('data/cikExchangeTicker.pk','wb') as x: pickle.dump(q,x,pickle.HIGHEST_PROTOCOL)
+
+a=[['1012493', 'Ferrellgas Partners ', '<td><a href="https://www.sec.gov/Archives/edgar/data/1012493/000110465915042483/a15-13180_58k.htm">8-K</a></td>', '20150601', [['Material weakness', set(['material weak']), 7]], [['Material weakness', set(['material weak']), 7]]], ['1013606', 'Endologix Inc /De/', '<td><a href="https://www.sec.gov/Archives/edgar/data/1013606/000101360615000109/form8-kmay282015annualshar.htm">8-K</a></td>', '20150601', [['Resignation', set(['resign']), 1]], [['Resignation', set(['resign']), 1]]], ['1021635', 'Oge Energy Corp.', '<td><a href="https://www.sec.gov/Archives/edgar/data/1021635/000102163515000078/ogeenergycorpform8-kx6x1x15.htm">8-K</a></td>', '20150601', [['Resignation', set(['resign']), 1]], [['Resignation', set(['resign']), 1]]], ['1022837', 'Sumitomo Mitsui Fina', '<td><a href="https://www.sec.gov/Archives/edgar/data/1022837/000119312515207559/d931112d6k.htm">6-K</a></td>', '20150601', [['Resignation', set(['resign']), 2]], [['Resignation', set(['resign']), 2]]], ['1022837', 'Sumitomo Mitsui Fina', '<td><a href="https://www.sec.gov/Archives/edgar/data/1022837/000119312515207584/d931100d6k.htm">6-K</a></td>', '20150601', [['Resignation', set(['resign']), 4]], [['Resignation', set(['resign']), 4]]], ['1034563', 'Icahn Enterprises Ho', '<td><a href="https://www.sec.gov/Archives/edgar/data/1034563/000114420415034805/v411215_8k.htm">8-K</a></td>', '20150601', [['Resignation', set(['resign']), 1]], [['Resignation', set(['resign']), 1]]]]
+
+#masters.updateWatchlist(a)
+
+#masters.addMapping(['1020646', 'OTC', 'ERFB'],'m')
+#a.sort(key=lambda x:x[4][0][2])
+#b=['<tr><td><a href="https://www.sec.gov/cgi-bin/browse-edgar?CIK=1072248&Find=Search&owner=exclude&action=getcompany">1072248</a></td>', '<td>M Line Holdings Inc</td>', '<td><a href="https://www.sec.gov/Archives/edgar/data/1072248/000161577415002335/s101709_10q.htm">10-Q</a></td>', '<td>20150819</td>', '<td>Material weakness (3)</td>', '<td>material weak</td>', '<td>No ticker!</td>', '<td>No ticker!</td>', '<td>No ticker!</td>', '<td>No ticker!</td>', '<td>No ticker!</td></tr>']
+
+mytext='im on that OTC BB: XXYZ, as well as that '
+exchange=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq]|OTC(( Pink)?|( QB)?|( BB)?))( GS)?:\W?([A-Z]{1,4})')
+#for i in range(0,10): print exchange.search(mytext).group(i)
 
 
+#toRemove=[['1017043', 'DKDK', 'GLPW'],['1018094', 'DKDK', 'PULB'],['1013272', 'DKDK', 'NWFL'],['1013005', 'DKDK', 'KRO'],['1011060', 'DKDK', 'ASNB'],['1009976', 'DKDK', 'CMOH'],['1009106', 'DKDK', 'TFX'],['1008463', 'DKDK', 'CDNS'],['1008023', 'DKDK', 'BAS'],['1007190', 'DKDK', 'CBZ'],['1006830', 'DKDK', 'CBKM.OB'],['1003201', 'DKDK', 'MMAC'],['1000697', 'DKDK', 'WAT']]
 
+#for b in toRemove: masters.removeMapping(b)
+
+masters.addMapping(['1006830', 'OTC', 'CBKM'],'xxx')

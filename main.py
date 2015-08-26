@@ -50,7 +50,7 @@ def loopOverDates(startDate,endDate):
                 with open(fileName,'r') as f: fileToRead=f.readlines()
                 if debugMode:
                     print '****IN DEBUG MODE****'
-                    fileToRead=fileToRead[0:500]
+                    fileToRead=fileToRead[0:75]
                 results=masters.checkDaysFilings(fileToRead,year,month,day)
                 #                print results
                 with open(outputFile,'w') as HTMLOutput:
@@ -68,7 +68,7 @@ def loopOverDates(startDate,endDate):
                     with open(fileName,'r') as f: fileToRead=f.readlines()
                     if debugMode:
                         print '****IN DEBUG MODE****'
-                        fileToRead=fileToRead[0:500]
+                        fileToRead=fileToRead[0:75]
                     results=masters.checkDaysFilings(fileToRead,year,month,day)
                     #                    print results
                     with open(outputFile,'w') as HTMLOutput:
@@ -193,10 +193,6 @@ def matchtrades(cik,d):
 #Now get the "profit"
 
 
-#Converts date in YYYYMMDD format to date object
-def todate(din):
-    dout=datetime.date(int(din[:4]),int(din[4:6]),int(din[6:8]))
-    return dout
 
 
 #The action starts here
@@ -216,6 +212,6 @@ def todate(din):
 #loopOverDates('20150723','20150724')
 
 debugMode=False
-loopOverDates('20150801','20150817')
+loopOverDates('20150824','20150824')
 
 #masters.filedDelayedReport()

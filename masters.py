@@ -1,5 +1,6 @@
 import sqlite3
 import pickle
+import datetime
 import time
 import urllib
 import re
@@ -10,6 +11,96 @@ import ftplib
 from StringIO import StringIO
 import xml.etree.ElementTree as ET
 
+
+#Converts date in YYYYMMDD format to date object
+def toDate(din):
+    dout=datetime.date(int(din[:4]),int(din[4:6]),int(din[6:8]))
+    return dout
+
+def makeThreatIndex(warningSigns):
+
+    index=0
+    flags=''
+
+    for sign in warningSigns:
+        if flags=='': flags=sign[0]
+        else: flags=flags+', '+sign[0]
+        if sign[0]=='Resignation': index+=1
+        elif sign[0]=='Poss investigation': index+=3
+        elif sign[0]=='Continued listing': index+=1
+        elif sign[0]=='Material weakness': index+=1
+        elif sign[0]=='Wells Notice': index+=5
+        elif sign[0]=='Auditor change': index+=2
+        else: print 'Not handling ',sign[0]
+    
+    return flags, index
+
+
+def updateWatchlist(outputBlock):
+
+    """
+
+    """
+
+    inc = datetime.timedelta(days=180)
+    print inc
+
+    try:
+        with open('data/watchlist.pk', 'r') as f: watchlist=pickle.load(f)
+        for line in watchlist: print 'line[1]:', line[1]
+        #Only keeping track of events for past 180 days.
+        newWatchlist=[line for line in watchlist if line[1]+inc>datetime.date.today()]
+        
+        print watchlist
+
+    except IOError as e:
+        print e
+        print e.args
+        newWatchlist=[]
+
+    toAdd=[[line[0],toDate(line[3]),makeThreatIndex(line[4])[0], makeThreatIndex(line[4])[1]] for line in outputBlock]
+
+    if newWatchlist:    newWatchlist.extend(toAdd)
+    else: newWatchlist=toAdd
+    with open('data/watchlist.pk','wb') as output: pickle.dump(newWatchlist,output,pickle.HIGHEST_PROTOCOL)
+
+    print toAdd
+    print newWatchlist
+
+
+    #the isdigit() code is a lazy way of checking that were getting records, as opposed to headers
+    #    with open(fileName,'r') as f:
+    #     g=[line.split('|') for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in warningSigns and line.split('|')[0] in onExchange]
+    
+#    print "These records are sketchy", g
+
+#Attempts to open the watchlist and appends the data from the date just loaded
+#if g: # evalutes to false if empty, presence of empty lists in watchlist would cause probs when iterating over watchlist
+#   try:
+#       with open('data/watchlist.pk', 'r') as input: temp=pickle.load(input)
+        
+        #This block of commented out stuff does not appear to work, at least in part because
+        #removeLaterFiled does not return anything
+        #First removes items from watchlist
+        #            with open(fileName,'r') as f: #Gets records of 10-Ks etc for ciks that were already on watchlist
+        #                laterFiling=f.readlines()
+        #            temp=removeLaterFiled(temp,laterFiling)
+        
+        #            temp.extend(g)
+        
+        #       except IOError:
+        #   print 'File probably doesn\'t exist'
+    #            temp=g #Consider this part of block commented out above
+
+#    finally:
+#       pass
+#Remove items from watchlist
+
+#Outputs updated watchlist
+#            with open('data/watchlist.pk', 'wb') as output:
+#                pickle.dump(temp,output,pickle.HIGHEST_PROTOCOL) #Consider this part of block commented out above.
+#else: pass
+
 def writeOutput(outputBlock,opYear,opMonth,opDay):
 
     outputFile='output/output_TESTING'+opYear+opMonth+opDay+'.html'
@@ -17,6 +108,7 @@ def writeOutput(outputBlock,opYear,opMonth,opDay):
     with open(outputFile,'w') as HTMLOutput:
         HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag (#)</b></th><th>Matched Terms</th><th>Stock Price</th><th>1Day</th><th>50Day</th><th>200Day</th><th>Cap</th></tr>')
         for line in outputBlock:
+            #Kind of janky, because last entry is just a key
             HTMLOutput.write(' '.join(line))
         HTMLOutput.write('</table>')
 
@@ -47,11 +139,19 @@ def formatOutput(outputBlock):
         col8='<td>'+yahooData[1]+'</td>'
         col9='<td>'+yahooData[2]+'</td>'
         col10='<td>'+yahooData[3]+'</td></tr>'
-    
+        if yahooData==['Multiple tickers!','Multiple tickers!','Multiple tickers!','Multiple tickers!'] or yahooData==['No ticker!','No ticker!','No ticker!','No ticker!']:
+            noData=1
+        else: noData=0
+
+        print '****yahoodata and nodata', yahooData,noData
         print [col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10]
-        formattedResults.append([col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10])
+        formattedResults.append([col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,noData])
     
-    return formattedResults
+    formattedResults.sort(key=lambda l:[l[11],l[1]])
+    print '******FORMATTED RESULTS**********', formattedResults
+    returnVal=[line[0:11] for line in formattedResults]
+    print returnVal
+    return returnVal
 
 
 def getHtmFile(record,toSearch):
@@ -94,7 +194,9 @@ def stripExhibits(input):
 #return '\n'.join(temp)
 
 def check8K(record,input,regExes,year,month,day):
-    
+    """
+        For some reason has already retrieved the full text file (input)
+    """
     print 'Running check8K on', record
 
     htmFileName=getHtmFile(record,input)
@@ -137,6 +239,90 @@ def check8K(record,input,regExes,year,month,day):
         return [col0,col1,col2,col3,col4,col5]
 
     else: return None
+
+def checkForm4(record,input):
+    """
+        Cleans XML file, reads in into a block of data, appends to existing block associated with cik
+        and then checks for profits.
+    """
+    print '****record', record
+    #    print '****longtext', input
+    
+    #Should grab ticker and add to list of mappings.
+    
+    i=0
+    lines=input.split('\n')
+    for line in lines:
+        i+=1
+        if line[:5]=="<?xml":
+            print '***found xml***'
+            start=i
+        elif line=="</ownershipDocument>":
+            print '***found ownersh***'
+            end=i
+        else: pass
+
+#Not sure why, but could not get code to work with StringIO, so had to use file
+#    XMLFile=StringIO()
+#    XMLFile.writelines(lines[start-1:end])
+#    print '***XMLFile', XMLFile.getvalue()
+
+    with open('temp/XML.xml','w') as XMLFile:
+        XMLFile.writelines(lines[start-1:end])
+    with open('temp/XML.xml','r') as XMLFile:
+        tree=ET.parse(XMLFile)
+
+    toAdd=[]
+
+#Should really be testing to make sure the values we're getting are at least consistent in type with values we're expecting
+
+    x=tree.find('issuer')
+    issuerCik=x[0].text.lstrip('0')
+    symbol=x[2].text
+    addMapping([issuerCik,'DKDK',symbol],'999')
+
+    y=tree.find('reportingOwner')
+    z=y.find('reportingOwnerId')
+    ownerCik=z[0].text.lstrip('0')
+
+    aa=y.find('reportingOwnerRelationship')
+
+    (isD,isO,is10P,isOther)=('0','0','0','0') #Defining these is risky
+    for e in aa:
+        if e.tag=='isDirector': isD=e.text
+        elif e.tag=='isOfficer': isO=e.text
+        elif e.tag=='isTenPercentOwner': is10P=e.text
+        elif e.tag=='isOther': isOther=e.text
+        else: print '***Unrecognized tag to describe owner***'
+
+
+    for a in tree.findall('nonDerivativeTable'):
+        for b in a.findall('nonDerivativeTransaction'): #does this for each of multiple transactions
+            title=''
+            transDate=None
+            amount=None
+            for c in b.iter(): #Each c should be a <nonDerivativeTransaction>, and constitutes its own record
+                #Also not sure why using b.iter() as opposed to b
+                if c.tag=='securityTitle': title=c[0].text
+                elif c.tag=='transactionDate': transDate=''.join(c[0].text.split('-'))
+                elif c.tag=='transactionCoding':
+                    code=c[1].text
+                    isSwap=c[2].text
+                elif c.tag=='transactionAmounts':
+                    shares=c[0][0].text
+                    price=c[1][0].text
+                    AD=c[2][0].text
+                elif c.tag=='ownershipNature':
+                    DI=c[0][0].text
+                    try: nature=c[1][0].text
+                    except IndexError: nature='' #Sometimes this element won't be in the XML file
+                elif c.tag in (['postTransactionAmounts']): pass
+                else: print '***Unrecognized tag', c.tag
+            toAdd.append([issuerCik,ownerCik,isD,isO,is10P,isOther,title,transDate,code,isSwap,shares,price,AD,DI,nature])
+            for c in b:
+                print '***testing***'
+                print c.tag
+            print toAdd
 
 
 
@@ -251,6 +437,49 @@ def getYahooLink(cik):
 
     return myVal
 
+def removeMapping(toRemove):
+
+    with open('data/cikExchangeTicker.pk','r') as input: cikExchangeTicker=pickle.load(input)
+
+    try:
+        cikExchangeTicker.remove(toRemove)
+        print 'Removed the following mapping: ', toRemove
+        with open('data/cikExchangeTicker.pk','wb') as output:
+            pickle.dump(cikExchangeTicker,output,pickle.HIGHEST_PROTOCOL)
+
+    except ValueError: print 'Mapping not removed; not in database: ', toRemove
+
+
+def addMapping(toAdd,flag):
+    """
+        Checks if proposed mapping of [cik, exchange, ticker] exists, then checks if its valid, then checks if cik mapped to s.t else
+        if flag='m' (manual), we dont care if its a valid mapping
+    """
+    try:
+        with open('data/cikExchangeTicker.pk','r') as input:
+            cikExchangeTicker=pickle.load(input)
+            if toAdd not in cikExchangeTicker:
+                if checkMapping(toAdd) or flag=='m': #if valid mapping or manual override
+                    uniques={company[0] for company in cikExchangeTicker}
+                    if toAdd[0] not in uniques: #Making sure mapping for cik doesn't exist
+                        cikExchangeTicker.append(toAdd)
+                        print 'Added mapping', toAdd
+                    else:
+                        currentMapping=[entry for entry in cikExchangeTicker if entry[0]==toAdd[0]]
+                        print 'Current mappings are:', currentMapping,'. Add:',toAdd,'?'
+                elif not checkMapping(toAdd) and flag!='m':
+                    print toAdd, ' is not a valid mapping; did not add.'
+                else:
+                    print 'This line should never print.'
+                    raise
+            else: print toAdd, 'already in mapping'
+        
+    except IOError:
+        print 'File probably doesn\'t exist.'
+        cikExchangeTicker=[toAdd]
+    finally:
+        with open('data/cikExchangeTicker.pk','wb') as output:
+            pickle.dump(cikExchangeTicker,output,pickle.HIGHEST_PROTOCOL)
 
 def getTicker(inputText,cik):
     
@@ -259,6 +488,7 @@ def getTicker(inputText,cik):
     """
 
 #    print inputText
+#    exchange=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq]|OTC)( GS)?:\W?([A-Z]{1,4})')
     exchange=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq]|OTC)( GS)?:\W?([A-Z]{1,4})')
     result=exchange.search(inputText)
 
@@ -299,12 +529,14 @@ def checkDaysFilings(masterReadlines,year,month,day):
     
     with open('data/onExchange.pk', 'r') as input: onExchange=pickle.load(input)
 
-    formsToCheck=['8-K','6-K']
+    formsToCheck=['8-K','6-K','20-F','10-Q','10-K','NT 10-Q','10-K/A','10-Q/A','NT 20-F']
 #    formsToCheck=['10-Q','10-K','NT 10-Q','10-K/A','10-Q/A']
 #    formsToCheck=['10-K','NT 10-Q','10-K/A','10-Q/A']
 #    formsToCheck=['10-Q']
 #    formsToCheck=['10-Q','8-K','6-K']
 #    formsToCheck=['6-K','20-F']
+#    formsToCheck=['20-F','10-Q','10-K','NT 10-Q','10-K/A','10-Q/A','NT 20-F']
+#    formsToCheck=['4']
 
     linesToCheck=[line.split('|') for line in masterReadlines if line.split('|')[0].isdigit() and line.split('|')[2] in formsToCheck and isNotOTC(line.split('|')[0])]
  
@@ -317,8 +549,10 @@ def checkDaysFilings(masterReadlines,year,month,day):
     wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
     wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
     investigation=re.compile(r'[Ss]ubpoena | [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee] | [Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy] [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
+    misstatement=re.compile(r'[Mm][Aa][Tt][Ee][Rr][Ii][Aa][Ll] [Mm][Ii][Ss][Ss][Tt][Aa][Tt][Ee]')
+    impairment=re.compile(r'[Ii][Mm][Pp][Aa][Ii][Rr][Mm][Ee][Nn][Tt]')
 
-    regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change']]
+    regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change'],[misstatement,'Mat. misstatement'],[impairment,'Impairment']]
 
 
     newOutput=[]
@@ -341,10 +575,13 @@ def checkDaysFilings(masterReadlines,year,month,day):
         longText=getFormFromEDGAR(record,ftp)
         if longText!=None:
             
-            if record[2] in ['8-K','6-K']:
+            if record[2] in ['8-K','6-K','20-F','10-Q','10-K','NT 10-Q','10-K/A','10-Q/A','NT 20-F']:
                 tempResult=check8K(record,longText,regExes,year,month,day)
                 if tempResult!=None:
                     newOutput.append(tempResult)
+        
+            elif record[2] in ['4']:
+                checkForm4(record,longText)
 
             else:
                 fileName=re.compile(r'<FILENAME>([A-Za-z0-9-_]*[.]htm)')
@@ -416,8 +653,10 @@ def checkDaysFilings(masterReadlines,year,month,day):
         print e.args
         ftp.close()
     
-    #NB: Date should not be hard-coded.
+    updateWatchlist(newOutput)
     writeOutput(formatOutput(newOutput),year,month,day)
+    with open('temp/output.pk','wb') as dest: pickle.dump(newOutput,dest,pickle.HIGHEST_PROTOCOL)
+
 
     return output
 
@@ -538,53 +777,6 @@ def updateWatchlistSQL(year,month,day):
 #    c.execute('SELECT * FROM watchlist')
 #    print c.fetchall()
 
-
-def updateWatchlist(UWyear,UWmonth,UWday):
-    """
-    Adds records from a given day's list of master records to watchlist.
-    Can save for SQL code, but going to try to accomplish this with lists and pickling in near term
-    Given that this gets called from loopOverDates, might make sense to pass it a file obj.
-    """
-        
-    fileName='masters/masterindex'+UWyear+UWmonth+UWday
-    warningSigns=['NT 10-K','NT 10-Q']
-    requiredFilings=['10-K','10-Q']
-
-    with open('data/onExchange.pk', 'r') as input: onExchange=pickle.load(input)
-
-    #the isdigit() code is a lazy way of checking that were getting records, as opposed to headers
-    with open(fileName,'r') as f:
-        g=[line.split('|') for line in f.readlines() if line.split('|')[0].isdigit() and line.split('|')[2] in warningSigns and line.split('|')[0] in onExchange]
-
-    print "These records are sketchy", g
-
-    #Attempts to open the watchlist and appends the data from the date just loaded
-    if g: # evalutes to false if empty, presence of empty lists in watchlist would cause probs when iterating over watchlist
-        try:
-            with open('data/watchlist.pk', 'r') as input: temp=pickle.load(input)
-
-#This block of commented out stuff does not appear to work, at least in part because
-#removeLaterFiled does not return anything
-            #First removes items from watchlist
-            #            with open(fileName,'r') as f: #Gets records of 10-Ks etc for ciks that were already on watchlist
-            #                laterFiling=f.readlines()
-            #            temp=removeLaterFiled(temp,laterFiling)
-
-#            temp.extend(g)
-
-        except IOError:
-            print 'File probably doesn\'t exist'
-            #            temp=g #Consider this part of block commented out above
-
-        finally:
-            pass
-            #Remove items from watchlist
-            
-            #Outputs updated watchlist
-            #            with open('data/watchlist.pk', 'wb') as output:
-                #                pickle.dump(temp,output,pickle.HIGHEST_PROTOCOL) #Consider this part of block commented out above.
-    else: pass
-
 def removeLaterFiled(myWatchlist,fileAsList):
     """
         Once the watchlist exists, this program is run prior to incorporating a new days master data into the watchlist.
@@ -604,10 +796,6 @@ def removeLaterFiled(myWatchlist,fileAsList):
     print 'Records that represent corrective filings', correctiveFilings
 
     correctiveUniques=getUniqueCiks(correctiveFilings)
-
-def filedCorrective(myWatchlist):
-    pass
-
 
 def getUniqueCiks(myWatchlist):
 
