@@ -11,6 +11,39 @@ import ftplib
 from StringIO import StringIO
 import xml.etree.ElementTree as ET
 
+def reviewReviewList():
+
+
+    with open('data/reviewList.pk','r') as input: reviewList=pickle.load(input)
+    newReviewList=[]
+
+    for mapping in reviewList:
+        print 'Mapping is: ', mapping
+        action=raw_input('Add it?')
+        if action=='y':
+            addMapping(mapping,'m') #doing manually, so can add any messed up mapping u want.
+        elif action=='n':
+            pass
+        else:
+             newReviewList.append(mapping)
+
+    with open('data/reviewList.pk','wb') as output: pickle.dump(newReviewList,output,pickle.HIGHEST_PROTOCOL)
+
+def addToReviewList(toAdd):
+    """
+        Adds cik-exchange-ticker mappings to list for later review
+    """
+    try:
+        with open('data/reviewList.pk','r') as input: reviewList=pickle.load(input)
+        if toAdd not in reviewList: reviewList.append(toAdd)
+        else: print toAdd, 'already in reviewList'
+
+    except IOError:
+        print 'File probably doesn\'t exist.'
+        reviewList=[toAdd]
+    finally:
+        with open('data/reviewList.pk','wb') as output:
+            pickle.dump(reviewList,output,pickle.HIGHEST_PROTOCOL)
 
 #Converts date in YYYYMMDD format to date object
 def toDate(din):
@@ -103,15 +136,33 @@ def updateWatchlist(outputBlock):
 
 def writeOutput(outputBlock,opYear,opMonth,opDay):
 
-    outputFile='output/output_TESTING'+opYear+opMonth+opDay+'.html'
+    print '***OUTPUT BLOCK***',outputBlock
 
-    with open(outputFile,'w') as HTMLOutput:
+    a_m='abcdefghijklm'
+    n_z='nopqrstuvwxyz'
+
+    outputFile1='output/output'+opYear+opMonth+opDay+' (A-M).html'
+    outputFile2='output/output'+opYear+opMonth+opDay+' (N-Z).html'
+    
+    for line in outputBlock:
+        print '***CHECKING LINES[1][4]***', line[1][4]
+    
+    group1=[line for line in outputBlock if line[1][4].lower() in a_m]
+    group2=[line for line in outputBlock if line[1][4].lower() in n_z]
+
+    with open(outputFile1,'w') as HTMLOutput:
         HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag (#)</b></th><th>Matched Terms</th><th>Stock Price</th><th>1Day</th><th>50Day</th><th>200Day</th><th>Cap</th></tr>')
-        for line in outputBlock:
+        for line in group1:
             #Kind of janky, because last entry is just a key
             HTMLOutput.write(' '.join(line))
         HTMLOutput.write('</table>')
 
+    with open(outputFile2,'w') as HTMLOutput:
+        HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag (#)</b></th><th>Matched Terms</th><th>Stock Price</th><th>1Day</th><th>50Day</th><th>200Day</th><th>Cap</th></tr>')
+        for line in group2:
+            #Kind of janky, because last entry is just a key
+            HTMLOutput.write(' '.join(line))
+        HTMLOutput.write('</table>')
 
 def formatOutput(outputBlock):
     """
@@ -119,7 +170,7 @@ def formatOutput(outputBlock):
     """
     
     formattedResults=[]
-    
+
     for line in outputBlock:
         
         yahooData=getYahooData(line[0])
@@ -143,15 +194,25 @@ def formatOutput(outputBlock):
             noData=1
         else: noData=0
 
-        print '****yahoodata and nodata', yahooData,noData
-        print [col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10]
         formattedResults.append([col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,noData])
+
+#        if line[1][0].lower() in a_m:
+#            firstHalf.append([col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,noData])
+#        elif line[1][0].lower() in n_z:
+#            secondHalf.append([col0,col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,noData])
+
+#    for segment in [firstHalf,secondHalf]:
+#        segment.sort(key=lambda l:[l[11],l[1]])
+    
     
     formattedResults.sort(key=lambda l:[l[11],l[1]])
-    print '******FORMATTED RESULTS**********', formattedResults
+#    print '******FORMATTED RESULTS**********', formattedResults
     returnVal=[line[0:11] for line in formattedResults]
-    print returnVal
+#    returnVal1=[line[0:11] for line in firstHalf]
+#    returnVal2=[line[0:11] for line in secondHalf]
+
     return returnVal
+#    return returnVal1, returnVal2
 
 
 def getHtmFile(record,toSearch):
@@ -467,8 +528,10 @@ def addMapping(toAdd,flag):
                     else:
                         currentMapping=[entry for entry in cikExchangeTicker if entry[0]==toAdd[0]]
                         print 'Current mappings are:', currentMapping,'. Add:',toAdd,'?'
+                        addToReviewList(toAdd)
                 elif not checkMapping(toAdd) and flag!='m':
                     print toAdd, ' is not a valid mapping; did not add.'
+                    addToReviewList(toAdd)
                 else:
                     print 'This line should never print.'
                     raise
@@ -509,7 +572,10 @@ def getTicker(inputText,cik):
                         else:
                             currentMapping=[entry for entry in cikExchangeTicker if entry[0]==toAdd[0]]
                             print 'Current mappings are:', currentMapping,'. Add:',toAdd,'?'
-                    else: print toAdd, ' is not a valid mapping; did not add.'
+                            addToReviewList(toAdd)
+                    else:
+                        print toAdd, ' is not a valid mapping; did not add.'
+                        addToReviewList(toAdd)
                 else: print toAdd, 'already in mapping'
 
         except IOError:
@@ -546,24 +612,27 @@ def checkDaysFilings(masterReadlines,year,month,day):
     cl=re.compile(r'continued listing')
     res=re.compile(r'resign')
     auditor=re.compile(r'Item 4[.]01')
+    item502=re.compile(r'[Ii][Tt][Ee][Mm] 5[.]02')
     wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
     wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
-    investigation=re.compile(r'[Ss]ubpoena | [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee] | [Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy] [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
+    investigation=re.compile(r'[Ss]ubpoena|[Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee]|[Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy][Ss]? [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
     misstatement=re.compile(r'[Mm][Aa][Tt][Ee][Rr][Ii][Aa][Ll] [Mm][Ii][Ss][Ss][Tt][Aa][Tt][Ee]')
     impairment=re.compile(r'[Ii][Mm][Pp][Aa][Ii][Rr][Mm][Ee][Nn][Tt]')
+    lawsuit=re.compile(r'[Pp][Uu][Tt][Aa][Tt][Ii][Vv][Ee] [Cc][Ll][Aa][Ss][Ss]|[Cc][Ll][Aa][Ss][Ss] [Aa][Cc][Tt][Ii][Oo][Nn]|[Ss][Hh][Aa][Rr][Ee][Hh][Oo][Ll][Dd][Ee][Rr] [Dd][Ee][Mm][Aa][Nn][Dd]|[Ww][Rr][Ii][Tt][Tt][Ee][Nn] [Dd][Ee][Mm][Aa][Nn][Dd]|[Dd][Ee][Mm][Aa][Nn][Dd] [Ll][Ee][Tt][Tt][Ee][Rr]|[Ss][Ee][Tt][Tt][Ll][Ee][Mm][Ee][Nn][Tt]')
 
-    regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change'],[misstatement,'Mat. misstatement'],[impairment,'Impairment']]
+    regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change'],[misstatement,'Mat. misstatement'],[item502,'Item 5.02'],[lawsuit,'Lawsuit']]
 
+    non8k=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[misstatement,'Mat. misstatement'],[lawsuit,'Lawsuit']]
 
     newOutput=[]
 
-    j=len(linesToCheck)
+    k=len(linesToCheck)
     i=1
 
     output=[]
 
     for record in linesToCheck:
-        print "Getting record %02d of %02d" % (i, j)
+        print "Getting record %02d of %02d" % (i, k)
 
         i+=1
 
@@ -575,10 +644,16 @@ def checkDaysFilings(masterReadlines,year,month,day):
         longText=getFormFromEDGAR(record,ftp)
         if longText!=None:
             
-            if record[2] in ['8-K','6-K','20-F','10-Q','10-K','NT 10-Q','10-K/A','10-Q/A','NT 20-F']:
+            if record[2] in ['20-F','10-Q','10-K','NT 10-Q','10-K/A','10-Q/A','NT 20-F']:
                 tempResult=check8K(record,longText,regExes,year,month,day)
                 if tempResult!=None:
                     newOutput.append(tempResult)
+        
+            elif record[2] in ['8-K','6-K']:
+                tempResult=check8K(record,longText,regExes,year,month,day)
+                if tempResult!=None:
+                    newOutput.append(tempResult)
+        
         
             elif record[2] in ['4']:
                 checkForm4(record,longText)

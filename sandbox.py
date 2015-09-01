@@ -197,13 +197,25 @@ a=[['1012493', 'Ferrellgas Partners ', '<td><a href="https://www.sec.gov/Archive
 #a.sort(key=lambda x:x[4][0][2])
 #b=['<tr><td><a href="https://www.sec.gov/cgi-bin/browse-edgar?CIK=1072248&Find=Search&owner=exclude&action=getcompany">1072248</a></td>', '<td>M Line Holdings Inc</td>', '<td><a href="https://www.sec.gov/Archives/edgar/data/1072248/000161577415002335/s101709_10q.htm">10-Q</a></td>', '<td>20150819</td>', '<td>Material weakness (3)</td>', '<td>material weak</td>', '<td>No ticker!</td>', '<td>No ticker!</td>', '<td>No ticker!</td>', '<td>No ticker!</td>', '<td>No ticker!</td></tr>']
 
-mytext='im on that OTC BB: XXYZ, as well as that '
-exchange=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq]|OTC(( Pink)?|( QB)?|( BB)?))( GS)?:\W?([A-Z]{1,4})')
+#mytext='im on that OTC BB: XXYZ, as well as that '
+#exchange=re.compile(r'([Nn][Yy][Ss][Ee]|[Nn][Aa][Ss][Dd][Aa][Qq]|OTC(( Pink)?|( QB)?|( BB)?))( GS)?:\W?([A-Z]{1,4})')
 #for i in range(0,10): print exchange.search(mytext).group(i)
 
 
-#toRemove=[['1017043', 'DKDK', 'GLPW'],['1018094', 'DKDK', 'PULB'],['1013272', 'DKDK', 'NWFL'],['1013005', 'DKDK', 'KRO'],['1011060', 'DKDK', 'ASNB'],['1009976', 'DKDK', 'CMOH'],['1009106', 'DKDK', 'TFX'],['1008463', 'DKDK', 'CDNS'],['1008023', 'DKDK', 'BAS'],['1007190', 'DKDK', 'CBZ'],['1006830', 'DKDK', 'CBKM.OB'],['1003201', 'DKDK', 'MMAC'],['1000697', 'DKDK', 'WAT']]
+#toRemove=[['1447028', 'NASDAQ', 'TKMR']]
 
 #for b in toRemove: masters.removeMapping(b)
 
-masters.addMapping(['1006830', 'OTC', 'CBKM'],'xxx')
+#mappings=[['925261', 'NYSE', 'AKO-A']]
+#for line in mappings: masters.addMapping(line,'m')
+#masters.reviewReviewList()
+
+#test='we Now Have a s SHareholder PUTAtive ClAsS aCtion on our hands as a result of receiving a WrITten DemAND LETteR'
+#lawsuit=re.compile(r'(?<=[Pp]utative\W)class(?=\Waction)')
+#lawsuit=re.compile(r'[Pp][Uu][Tt][Aa][Tt][Ii][Vv][Ee] [Cc][Ll][Aa][Ss][Ss]|[Cc][Ll][Aa][Ss][Ss] [Aa][Cc][Tt][Ii][Oo][Nn]|[Ss][Hh][Aa][Rr][Ee][Hh][Oo][Ll][Dd][Ee][Rr] [Dd][Ee][Mm][Aa][Nn][Dd]|[Ww][Rr][Ii][Tt][Tt][Ee][Nn] [Dd][Ee][Mm][Aa][Nn][Dd]|[Dd][Ee][Mm][Aa][Nn][Dd] [Ll][Ee][Tt][Tt][Ee][Rr]')
+#print lawsuit.findall(test)
+
+def myFunc():
+    return 1,2
+
+print myFunc()[0]+myFunc()[1]
