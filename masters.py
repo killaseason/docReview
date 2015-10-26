@@ -16,6 +16,8 @@ def reviewReviewList():
 
     with open('data/reviewList.pk','r') as input: reviewList=pickle.load(input)
     newReviewList=[]
+    
+    print 'There are ', len(reviewList), ' entries to review.'
 
     for mapping in reviewList:
         print 'Mapping is: ', mapping
@@ -138,11 +140,11 @@ def writeOutput(outputBlock,opYear,opMonth,opDay):
 
     print '***OUTPUT BLOCK***',outputBlock
 
-    a_m='abcdefghijklm'
-    n_z='nopqrstuvwxyz'
+    a_m='abcdefghijk'
+    n_z='lmnopqrstuvwxyz'
 
-    outputFile1='output/output'+opYear+opMonth+opDay+' (A-M).html'
-    outputFile2='output/output'+opYear+opMonth+opDay+' (N-Z).html'
+    outputFile1='output/output'+opYear+opMonth+opDay+' (A-K).html'
+    outputFile2='output/output'+opYear+opMonth+opDay+' (L-Z).html'
     
     for line in outputBlock:
         print '***CHECKING LINES[1][4]***', line[1][4]
@@ -150,7 +152,10 @@ def writeOutput(outputBlock,opYear,opMonth,opDay):
     group1=[line for line in outputBlock if line[1][4].lower() in a_m]
     group2=[line for line in outputBlock if line[1][4].lower() in n_z]
 
+    today=datetime.datetime.today()
+
     with open(outputFile1,'w') as HTMLOutput:
+        HTMLOutput.write('<h1 style=\"text-align:center\">Run Date: '+today.strftime('%B')+' '+str(today.day)+', '+str(today.year)+'</h1>')
         HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag (#)</b></th><th>Matched Terms</th><th>Stock Price</th><th>1Day</th><th>50Day</th><th>200Day</th><th>Cap</th></tr>')
         for line in group1:
             #Kind of janky, because last entry is just a key
@@ -158,6 +163,7 @@ def writeOutput(outputBlock,opYear,opMonth,opDay):
         HTMLOutput.write('</table>')
 
     with open(outputFile2,'w') as HTMLOutput:
+        HTMLOutput.write('<h1 style=\"text-align:center\">Run Date: '+today.strftime('%B')+' '+str(today.day)+', '+str(today.year)+'</h1>')
         HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag (#)</b></th><th>Matched Terms</th><th>Stock Price</th><th>1Day</th><th>50Day</th><th>200Day</th><th>Cap</th></tr>')
         for line in group2:
             #Kind of janky, because last entry is just a key
@@ -258,7 +264,7 @@ def check8K(record,input,regExes,year,month,day):
     """
         For some reason has already retrieved the full text file (input)
     """
-    print 'Running check8K on', record
+    print '\nRunning check8K on', record
 
     htmFileName=getHtmFile(record,input)
             
@@ -277,6 +283,7 @@ def check8K(record,input,regExes,year,month,day):
         ind=len(hits)
         
         #If there are one or more hits for a given regex, save for later display.
+        #[Type of warning sign, regex matches associated w warning sign, number of such matches]
         if ind>0: warningSigns.append([line[1],uniqueHits,len(hits)])
 
     #This is the preferred way to test for non-empty list
@@ -461,22 +468,28 @@ def getYahooData(cik):
 
         YQL='https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.quotes%20where%20symbol%20in%20(%22'+links[0][2]+'%22)&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys'
     
-        tree=ET.parse(urllib.urlopen(YQL))
-        root=tree.getroot()
+        try:
+            tree=ET.parse(urllib.urlopen(YQL))
+            root=tree.getroot()
     
         #This is a truly terrible way to do this: there could be multiple nodes
-        for node in root.iter('ChangeinPercent'):
-            change1Day=node.text
-            if change1Day==None: change1Day='N/A'
-        for node in root.iter('MarketCapitalization'):
-            marketCap=node.text
-            if marketCap==None: marketCap='N/A'
-        for node in root.iter('PercentChangeFromTwoHundreddayMovingAverage'):
-            change200Days=node.text
-            if change200Days==None: change200Days='N/A'
-        for node in root.iter('PercentChangeFromFiftydayMovingAverage'):
-            change50Days=node.text
-            if change50Days==None: change50Days='N/A'
+            for node in root.iter('ChangeinPercent'):
+                change1Day=node.text
+                if change1Day==None: change1Day='N/A'
+            for node in root.iter('MarketCapitalization'):
+                marketCap=node.text
+                if marketCap==None: marketCap='N/A'
+            for node in root.iter('PercentChangeFromTwoHundreddayMovingAverage'):
+                change200Days=node.text
+                if change200Days==None: change200Days='N/A'
+            for node in root.iter('PercentChangeFromFiftydayMovingAverage'):
+                change50Days=node.text
+                if change50Days==None: change50Days='N/A'
+    
+        except IOError: (change1Day,change50Days,change200Days,marketCap) = ('ERROR','ERROR','ERROR','ERROR')
+        except Exception as e:
+            (change1Day,change50Days,change200Days,marketCap) = ('ERROR','ERROR','ERROR','ERROR')
+            print '**Encountered error:', e, ' with args', e.args
     
         print [change1Day,change50Days,change200Days,marketCap]
         return [change1Day,change50Days,change200Days,marketCap]
@@ -608,21 +621,24 @@ def checkDaysFilings(masterReadlines,year,month,day):
  
     print 'We have %02d lines to check' % len(linesToCheck)
 
+# Not using
+#item502=re.compile(r'[Ii][Tt][Ee][Mm] 5[.]02')
+#impairment=re.compile(r'[Ii][Mm][Pp][Aa][Ii][Rr][Mm][Ee][Nn][Tt]')
+
     r=re.compile(r'[Mm]aterial(?:ly)? weak')
     cl=re.compile(r'continued listing')
     res=re.compile(r'resign')
-    auditor=re.compile(r'Item 4[.]01')
-    item502=re.compile(r'[Ii][Tt][Ee][Mm] 5[.]02')
+    auditor=re.compile(r'[Ii][Tt][Ee][Mm] 4[.]01')
     wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
     wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
-    investigation=re.compile(r'[Ss]ubpoena|[Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee]|[Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy][Ss]? [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
+    investigation=re.compile(r'[Ss]ubpoena|[Dd][Ee][Pp][Aa][Rr][Tt][Mm][Ee][Nn][Tt] [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee]|[Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy][Ss]? [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
     misstatement=re.compile(r'[Mm][Aa][Tt][Ee][Rr][Ii][Aa][Ll] [Mm][Ii][Ss][Ss][Tt][Aa][Tt][Ee]')
-    impairment=re.compile(r'[Ii][Mm][Pp][Aa][Ii][Rr][Mm][Ee][Nn][Tt]')
+    restatement=re.compile(r'[Rr][Ee][Ss][Tt][Aa][Tt][Ee][Mm][Ee][Nn][Tt]')
     lawsuit=re.compile(r'[Pp][Uu][Tt][Aa][Tt][Ii][Vv][Ee] [Cc][Ll][Aa][Ss][Ss]|[Cc][Ll][Aa][Ss][Ss] [Aa][Cc][Tt][Ii][Oo][Nn]|[Ss][Hh][Aa][Rr][Ee][Hh][Oo][Ll][Dd][Ee][Rr] [Dd][Ee][Mm][Aa][Nn][Dd]|[Ww][Rr][Ii][Tt][Tt][Ee][Nn] [Dd][Ee][Mm][Aa][Nn][Dd]|[Dd][Ee][Mm][Aa][Nn][Dd] [Ll][Ee][Tt][Tt][Ee][Rr]|[Ss][Ee][Tt][Tt][Ll][Ee][Mm][Ee][Nn][Tt]')
 
-    regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change'],[misstatement,'Mat. misstatement'],[item502,'Item 5.02'],[lawsuit,'Lawsuit']]
+    regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change'],[misstatement,'Mat. misstatement'],[restatement,'Restatement'],[lawsuit,'Lawsuit']]
 
-    non8k=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[misstatement,'Mat. misstatement'],[lawsuit,'Lawsuit']]
+    non8k=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[misstatement,'Mat. misstatement'],[restatement,'Restatement'],[lawsuit,'Lawsuit']]
 
     newOutput=[]
 
@@ -763,6 +779,11 @@ def getFormFromEDGAR(masterRecord,connection):
             print 'There was some other kind of error.'
             print f
             print f.args
+            errType=f.args[0].split(' ') #def dont entirely understand this
+            if errType[0]=='550': gotRecord=True #500 means file isnt there.
+            else:
+                print 'errType[0]= ', errType[0]
+                connection.retrlines('RETR '+remoteFile,s.write)
         finally:
             delay=random.randrange(1,3,1)
 #            time.sleep(delay)

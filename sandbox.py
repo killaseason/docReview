@@ -10,6 +10,8 @@ import masters
 import pickle
 import ftplib
 import xml.etree.ElementTree as ET
+import datetime
+import string
 
 
 #with open('regexDoc.txt','r') as f:
@@ -168,15 +170,7 @@ import xml.etree.ElementTree as ET
 
 from masters import check8K
 from masters import getHtmFile
-r=re.compile(r'[Mm]aterial(?:ly)? weak')
-cl=re.compile(r'continued listing')
-res=re.compile(r'resign')
-auditor=re.compile(r'Item 4[.]01')
-wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
-wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
-investigation=re.compile(r'[Ss]ubpoena | [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee] | [Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy] [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
-t=re.compile(r'[Cc]ompany')
-    
+
 #regExes=[[r,'Material weakness'],[cl, 'Continued listing'],[res,'Resignation'],[wellsNotice, 'Wells Notice'],[investigation,'Poss investigation'],[auditor,'Auditor change'],[t,'bullshit']]
 
 #b=['1000683','BLONDER TONGUE LABORATORIES INC','10-Q','20150814','edgar/data/1000683/0001144204-15-049290.txt\n']
@@ -202,12 +196,12 @@ a=[['1012493', 'Ferrellgas Partners ', '<td><a href="https://www.sec.gov/Archive
 #for i in range(0,10): print exchange.search(mytext).group(i)
 
 
-#toRemove=[['1447028', 'NASDAQ', 'TKMR']]
+#toRemove=[['933590', 'NASDAQ', 'CBIN']]
 
 #for b in toRemove: masters.removeMapping(b)
 
-#mappings=[['925261', 'NYSE', 'AKO-A']]
-#for line in mappings: masters.addMapping(line,'m')
+mappings=[['933590', 'NASDAQ', 'YCB']]
+#for line in mappings: masters.addMapping(line,'XXX')
 #masters.reviewReviewList()
 
 #test='we Now Have a s SHareholder PUTAtive ClAsS aCtion on our hands as a result of receiving a WrITten DemAND LETteR'
@@ -215,7 +209,50 @@ a=[['1012493', 'Ferrellgas Partners ', '<td><a href="https://www.sec.gov/Archive
 #lawsuit=re.compile(r'[Pp][Uu][Tt][Aa][Tt][Ii][Vv][Ee] [Cc][Ll][Aa][Ss][Ss]|[Cc][Ll][Aa][Ss][Ss] [Aa][Cc][Tt][Ii][Oo][Nn]|[Ss][Hh][Aa][Rr][Ee][Hh][Oo][Ll][Dd][Ee][Rr] [Dd][Ee][Mm][Aa][Nn][Dd]|[Ww][Rr][Ii][Tt][Tt][Ee][Nn] [Dd][Ee][Mm][Aa][Nn][Dd]|[Dd][Ee][Mm][Aa][Nn][Dd] [Ll][Ee][Tt][Tt][Ee][Rr]')
 #print lawsuit.findall(test)
 
-def myFunc():
-    return 1,2
 
-print myFunc()[0]+myFunc()[1]
+#startObj=datetime.datetime(2015,9,1)
+#endObj=datetime.datetime(2015,9,10)
+#currObj=startObj
+
+#inc = datetime.timedelta(days=1)
+
+#while currObj<endObj:
+#    print 'currObj= ', currObj
+#    currObj+=inc
+
+#print 'startObj= ', startObj
+
+#someDay=datetime.datetime(2015,9,20)
+#today=datetime.datetime.today()
+
+#YQL2='https://query.yahooapis.com/v1/yql?q=select%20*%20from%20yahoo.finance.historicaldata%20where%20symbol%20%3D%20%22'+'YHOO'+'%22%20and%20startDate%20%3D%20%22'+'2009-09-11'+'%22%20and%20endDate%20%3D%20%22'+'2010-03-10'+'%22&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys'
+
+#YQL3='https://query.yahooapis.com/v1/yql?q=select%20*%20from%20yahoo.finance.historicaldata%20where%20symbol%20%3D%20%22YHOO%22%20and%20startDate%20%3D%20%222009-09-11%22%20and%20endDate%20%3D%20%222010-03-10%22&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys'
+
+#try: tree=ET.parse(urllib.urlopen(YQL3))
+#except IOError as e:
+#    print e
+#    print e.args
+#    print e.args[3]
+
+#root=tree.getroot()
+#print root
+
+potentialTickers=set()
+for l in string.ascii_uppercase: potentialTickers.add(l)
+
+for l in string.ascii_uppercase:
+    for m in string.ascii_uppercase:potentialTickers.add(l+m)
+
+for l in string.ascii_uppercase:
+    for m in string.ascii_uppercase:
+        for n in string.ascii_uppercase: potentialTickers.add(l+m+n)
+
+for l in string.ascii_uppercase:
+    for m in string.ascii_uppercase:
+        for n in string.ascii_uppercase:
+            for o in string.ascii_uppercase: potentialTickers.add(l+m+n+o)
+
+
+print potentialTickers
+print len(potentialTickers)

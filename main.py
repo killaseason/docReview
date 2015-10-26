@@ -27,60 +27,44 @@ def loopOverDates(startDate,endDate):
     
     startObj=datetime.datetime(int(startDate[0:4]),int(startDate[4:6]),int(startDate[6:8]))
     endObj=datetime.datetime(int(endDate[0:4]),int(endDate[4:6]),int(endDate[6:8]))
+    currObj=startObj
     
     inc = datetime.timedelta(days=1)
     
     #CHECK IF MASTER EXISTS AND DOWNLOAD IF NOT
 
-    while startObj<=endObj:
-        if startObj.weekday()<5: #i.e., if its a weekday
+    while currObj<=endObj:
+        if currObj.weekday()<5: #i.e., if its a weekday
             
-            year=str(startObj.year)
-            month="%02d" % startObj.month
-            day="%02d" % startObj.day
-                
+            year=str(currObj.year)
+            month="%02d" % currObj.month
+            day="%02d" % currObj.day
+            
             fileName='masters/masterindex'+year+month+day
             print fileName
             outputFile='output/output_'+year+month+day+'.html'
             
             if os.path.isfile(fileName):
                 print "file %s exists" % fileName
-                with open(fileName,'r') as f: masters.onExchange(f)
-#                masters.updateWatchlist(year,month,day)
-                with open(fileName,'r') as f: fileToRead=f.readlines()
-                if debugMode:
-                    print '****IN DEBUG MODE****'
-                    fileToRead=fileToRead[0:500]
-                results=masters.checkDaysFilings(fileToRead,year,month,day)
-                #                print results
-                with open(outputFile,'w') as HTMLOutput:
-                    HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag</b></th><th>Matched Terms</th><th># Matches</th><th>Stock Price</th><th>1Day</th><th>50Day</th><th>200Day</th><th>Cap</th></tr>')
-                    for line in results:
-                        HTMLOutput.write(' '.join(line))
-                    HTMLOutput.write('</table>')
-
             else:
                 try:
                     remotePath='ftp://ftp.sec.gov/edgar/daily-index/master.'+year+month+day+'.idx'
                     urllib.urlretrieve(remotePath,fileName)
-                    with open(fileName,'r') as f: masters.onExchange(f)
-                #                    masters.updateWatchlist(year,month,day)
-                    with open(fileName,'r') as f: fileToRead=f.readlines()
-                    if debugMode:
-                        print '****IN DEBUG MODE****'
-                        fileToRead=fileToRead[0:500]
-                    results=masters.checkDaysFilings(fileToRead,year,month,day)
-                    #                    print results
-                    with open(outputFile,'w') as HTMLOutput:
-                        HTMLOutput.write('<table border=\"1\"><tr><th><b>CIK</b></th><th><b>Company Name</b></th><th><b>Form</b></th><th><b>Date Filed</b></th><th><b>Flag</b></th><th>Matched Terms</th><th># Matches</th><th>Stock Price</th><th>1Day</th><th>50Day</th><th>200Day</th><th>Cap</th></tr>')
-                        for line in results:
-                            HTMLOutput.write(' '.join(line))
-                        HTMLOutput.write('</table>')
 
-
-                except IOError: print "There was an IOError of some sort"
+                except IOError as e:
+                    print 'There was an IOError of some sort: ', e
+                    print e.args
                 
-        startObj+=inc
+            with open(fileName,'r') as f: masters.onExchange(f) #Think we can get rid of this bc
+                #using other way to identify publicly traded companies now.
+#           masters.updateWatchlist(year,month,day)
+            with open(fileName,'r') as f: fileToRead=f.readlines()
+            if debugMode:
+                print '****IN DEBUG MODE****'
+                fileToRead=fileToRead[0:100]
+            results=masters.checkDaysFilings(fileToRead,year,month,day)
+            
+        currObj+=inc
 
 #    for myDate in dateBlock:
 #        with open('masters/masterindex'+myDate,'r') as f:
@@ -212,6 +196,6 @@ def matchtrades(cik,d):
 #loopOverDates('20150723','20150724')
 
 debugMode=False
-loopOverDates('20150827','20150827')
+loopOverDates('20151019','20151025')
 
 #masters.filedDelayedReport()
