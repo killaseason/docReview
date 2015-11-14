@@ -12,6 +12,7 @@ import ftplib
 import xml.etree.ElementTree as ET
 import datetime
 import string
+import csv
 
 
 #with open('regexDoc.txt','r') as f:
@@ -238,21 +239,75 @@ mappings=[['933590', 'NASDAQ', 'YCB']]
 #root=tree.getroot()
 #print root
 
-potentialTickers=set()
-for l in string.ascii_uppercase: potentialTickers.add(l)
+def makeAllTickers():
+    potentialTickers=[]
+    for l in string.ascii_uppercase: potentialTickers.append(['',l])
 
-for l in string.ascii_uppercase:
-    for m in string.ascii_uppercase:potentialTickers.add(l+m)
+    for l in string.ascii_uppercase:
+        for m in string.ascii_uppercase:potentialTickers.append(['',l+m])
 
-for l in string.ascii_uppercase:
-    for m in string.ascii_uppercase:
-        for n in string.ascii_uppercase: potentialTickers.add(l+m+n)
+    for l in string.ascii_uppercase:
+        for m in string.ascii_uppercase:
+            for n in string.ascii_uppercase: potentialTickers.append(['',l+m+n])
 
-for l in string.ascii_uppercase:
-    for m in string.ascii_uppercase:
-        for n in string.ascii_uppercase:
-            for o in string.ascii_uppercase: potentialTickers.add(l+m+n+o)
+    for l in string.ascii_uppercase:
+        for m in string.ascii_uppercase:
+            for n in string.ascii_uppercase:
+                for o in string.ascii_uppercase: potentialTickers.append(['',l+m+n+o])
 
+    with open('data/allTickers.pk','wb') as output:
+        pickle.dump(potentialTickers,output,pickle.HIGHEST_PROTOCOL)
 
-print potentialTickers
-print len(potentialTickers)
+def mapAllTickers():
+
+    r=re.compile(r'(CIK=)([0-9]{10})')
+    
+    with open('data/allTickers.pk','r') as input: mappings=pickle.load(input)
+
+    for line in mappings:
+        
+        f=urllib.urlopen('https://www.sec.gov/cgi-bin/browse-edgar?CIK='+line[2]+'&Find=Search&owner=exclude&action=getcompany')
+    
+        g=f.read()
+        result=r.search(g)
+
+        if result==None:
+            print '**ERROR** ticker ',line[2],' matches to no cik'
+            line[0]='D'
+        
+        else:
+            line[0]=result.group(2).lstrip('0')
+
+    with open('data/allTickersMapped.pk','wb') as output:
+        pickle.dump(mappings,output,pickle.HIGHEST_PROTOCOL)
+
+    print mappings
+
+mapAllTickers()
+
+def readTickerData():
+    #Reads in data downloaded from NASDAQ.com and creates [cik,exchange,ticker] mapping
+    #The data being read in include what appear to be funds that have tickers but arent
+    #actually companies. It would be helpful not to read these in.
+
+    with open('NASDAQ Tickers 2015-10-26.csv', 'rb') as csvFile:
+        csvReader=csv.reader(csvFile,delimiter=',')
+        tickers1=[['','NASDAQ',line[0]] for line in csvReader]
+
+    with open('AMEX Tickers 2015-10-26.csv', 'rb') as csvFile:
+        csvReader=csv.reader(csvFile,delimiter=',')
+        tickers2=[['','AMEX',line[0]] for line in csvReader]
+
+    with open('NYSE Tickers 2015-10-26.csv', 'rb') as csvFile:
+        csvReader=csv.reader(csvFile,delimiter=',')
+        tickers3=[['','NYSE',line[0]] for line in csvReader]
+
+    allTickers=tickers1
+    allTickers.extend(tickers2)
+    allTickers.extend(tickers3)
+
+    with open('data/allTickers.pk','wb') as output:
+        pickle.dump(allTickers,output,pickle.HIGHEST_PROTOCOL)
+
+#readTickerData()
+

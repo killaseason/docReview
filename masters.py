@@ -631,7 +631,7 @@ def checkDaysFilings(masterReadlines,year,month,day):
     auditor=re.compile(r'[Ii][Tt][Ee][Mm] 4[.]01')
     wells=re.compile(r'[Ww][Ee][Ll][Ll][Ss].(?![Ff][Aa][Rr][Gg][Oo])')
     wellsNotice=re.compile(r'[Ww][Ee][Ll][Ll][Ss] [Nn][Oo][Tt][Ii][Cc][Ee]|[Ww][Ee][Ll][Ll][Ss] [Ll][Ee][Tt][Tt][Ee][Rr]')
-    investigation=re.compile(r'[Ss]ubpoena|[Dd][Ee][Pp][Aa][Rr][Tt][Mm][Ee][Nn][Tt] [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee]|[Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy][Ss]? [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
+    investigation=re.compile(r'[Cc][Ii][Vv][Ii][Ll] [Ii][Nn][Vv][Ee][Ss][Tt][Ii][Gg][Aa][Tt][Ii][Vv][Ee] [Dd][Ee][Mm][Aa][Nn][Dd]|[Ss][Uu][Bb][Pp][Oo][Ee][Nn][Aa]|[Dd][Ee][Pp][Aa][Rr][Tt][Mm][Ee][Nn][Tt] [Oo][Ff] [Jj][Uu][Ss][Tt][Ii][Cc][Ee]|[Aa][Tt][Tt][Oo][Rr][Nn][Ee][Yy][Ss]? [Gg][Ee][Nn][Ee][Rr][Aa][Ll]')
     misstatement=re.compile(r'[Mm][Aa][Tt][Ee][Rr][Ii][Aa][Ll] [Mm][Ii][Ss][Ss][Tt][Aa][Tt][Ee]')
     restatement=re.compile(r'[Rr][Ee][Ss][Tt][Aa][Tt][Ee][Mm][Ee][Nn][Tt]')
     lawsuit=re.compile(r'[Pp][Uu][Tt][Aa][Tt][Ii][Vv][Ee] [Cc][Ll][Aa][Ss][Ss]|[Cc][Ll][Aa][Ss][Ss] [Aa][Cc][Tt][Ii][Oo][Nn]|[Ss][Hh][Aa][Rr][Ee][Hh][Oo][Ll][Dd][Ee][Rr] [Dd][Ee][Mm][Aa][Nn][Dd]|[Ww][Rr][Ii][Tt][Tt][Ee][Nn] [Dd][Ee][Mm][Aa][Nn][Dd]|[Dd][Ee][Mm][Aa][Nn][Dd] [Ll][Ee][Tt][Tt][Ee][Rr]|[Ss][Ee][Tt][Tt][Ll][Ee][Mm][Ee][Nn][Tt]')

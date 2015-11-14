@@ -196,6 +196,6 @@ def matchtrades(cik,d):
 #loopOverDates('20150723','20150724')
 
 debugMode=False
-loopOverDates('20151019','20151025')
+loopOverDates('20151105','20151106')
 
 #masters.filedDelayedReport()
